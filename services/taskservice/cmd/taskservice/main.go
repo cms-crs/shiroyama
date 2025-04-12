@@ -3,6 +3,9 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+	"taskservice/internal/app"
 	"taskservice/internal/config"
 )
 
@@ -18,6 +21,21 @@ func main() {
 	log := setupLogger(cfg.Env)
 
 	log.Info("Starting application", slog.Any("config", cfg))
+	application := app.New(log, cfg.Grpc.Port)
+
+	go application.GRPCServer.MustRun()
+
+	signalChan := make(chan os.Signal, 1)
+
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	sign := <-signalChan
+
+	log.Info("Stopping application", slog.String("signal", sign.String()))
+
+	application.GRPCServer.Stop()
+
+	log.Info("Application stopped")
 
 }
 
