@@ -3,26 +3,33 @@ package grpcapp
 import (
 	"fmt"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 	"log/slog"
 	"net"
-	taskservicegrpc "taskservice/internal/grpc/taskservice"
+	postgresrepo "taskservice/internal/adapter/postgresrepo/task"
+	"taskservice/internal/handler/grpc/taskservice"
+	service "taskservice/internal/service/task"
 )
 
 type App struct {
 	log  *slog.Logger
 	gRPC *grpc.Server
 	port int
+	db   *gorm.DB
 }
 
-func New(log *slog.Logger, port int) *App {
+func New(log *slog.Logger, port int, db *gorm.DB) *App {
 	gRPCServer := grpc.NewServer()
+	taskRepo := postgresrepo.NewTaskRepository(db)
+	taskService := service.NewTaskService(taskRepo)
 
-	taskservicegrpc.Register(gRPCServer)
+	taskservicegrpc.Register(gRPCServer, taskService, log)
 
 	return &App{
 		log:  log,
 		gRPC: gRPCServer,
 		port: port,
+		db:   db,
 	}
 }
 

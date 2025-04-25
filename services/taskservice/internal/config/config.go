@@ -4,17 +4,12 @@ import (
 	"flag"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"
-	"time"
 )
 
 type Config struct {
-	Env  string     `yaml:"env" env-default:"local"`
-	Grpc GRPCConfig `yaml:"grpc"`
-}
-
-type GRPCConfig struct {
-	Port    int           `yaml:"port"`
-	Timeout time.Duration `yaml:"timeout"`
+	Env  string         `yaml:"env" env-default:"local"`
+	Grpc GRPCConfig     `yaml:"grpc"`
+	DB   DatabaseConfig `yaml:"db"`
 }
 
 func MustLoad() *Config {
