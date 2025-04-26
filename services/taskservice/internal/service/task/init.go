@@ -8,6 +8,7 @@ import (
 
 type TaskRepository interface {
 	Create(ctx context.Context, task *entity.Task) error
+	GetTask(ctx context.Context, taskID uint64) (*entity.Task, error)
 }
 
 type TaskService struct {

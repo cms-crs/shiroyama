@@ -2,16 +2,17 @@ package dto
 
 import "github.com/go-playground/validator"
 
-type TaskRequest struct {
+type GetTaskRequest struct {
 	ID uint64 `json:"id" validate:"required"`
 }
 
-type TaskResponse struct {
+type GetTaskResponse struct {
+	ID          uint64 `json:"id" validate:"required"`
 	Title       string
 	Description string
 }
 
-func (r *TaskRequest) Validate() error {
+func (r *GetTaskRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }

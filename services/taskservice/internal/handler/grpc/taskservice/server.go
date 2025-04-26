@@ -14,6 +14,9 @@ type TaskService interface {
 	Create(ctx context.Context,
 		request dto.CreateTaskRequest,
 	) (*dto.CreateTaskResponse, error)
+	GetTask(ctx context.Context,
+		request *dto.GetTaskRequest,
+	) (*dto.GetTaskResponse, error)
 }
 
 type serverAPI struct {
@@ -64,8 +67,38 @@ func (server serverAPI) CreateTask(ctx context.Context, req *taskservice.CreateT
 		Description: task.Description,
 	}, nil
 }
-func (server serverAPI) GetTask(context.Context, *taskservice.GetTaskRequest) (*taskservice.Task, error) {
-	panic("implement me")
+func (server serverAPI) GetTask(ctx context.Context, req *taskservice.GetTaskRequest) (*taskservice.Task, error) {
+	const op = "serverAPI.GetTask"
+
+	log := server.log.With(
+		slog.String("op", op),
+	)
+
+	if req == nil {
+		log.Info("create task request is nil")
+		return nil, status.Error(codes.InvalidArgument, "request cannot be nil")
+	}
+
+	request := &dto.GetTaskRequest{
+		ID: req.Id,
+	}
+
+	err := request.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	taskResponse, err := server.taskService.GetTask(ctx, request)
+	if err != nil {
+		log.Error("get task failed", "error", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &taskservice.Task{
+		Id:          taskResponse.ID,
+		Title:       taskResponse.Title,
+		Description: taskResponse.Description,
+	}, nil
 }
 func (server serverAPI) UpdateTask(context.Context, *taskservice.UpdateTaskRequest) (*taskservice.Task, error) {
 	panic("implement me")

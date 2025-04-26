@@ -30,3 +30,11 @@ func NewCreateTaskResponse(task *entity.Task) *CreateTaskResponse {
 		Description: task.Description,
 	}
 }
+
+func NewGetTaskResponse(task *entity.Task) *GetTaskResponse {
+	return &GetTaskResponse{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: task.Description,
+	}
+}
