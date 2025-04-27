@@ -35,7 +35,7 @@ func fetchConfigPath() string {
 	flag.Parse()
 
 	if configPath == "" {
-		configPath = os.Getenv("CONFIG_PATH")
+		configPath = os.Getenv("TASK_SERVICE_CONFIG_PATH")
 	}
 
 	return configPath

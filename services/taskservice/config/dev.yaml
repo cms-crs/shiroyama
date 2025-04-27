@@ -3,10 +3,10 @@ grpc:
   port: 44044
   timeout: 10h
 db:
-  host: localhost
+  host: postgres
   port: 3306
   user: user
-  name: tasks
+  name: postgres
   password: password
   max_open_connections: 10
   max_idle_connections: 5
