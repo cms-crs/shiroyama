@@ -1,0 +1,8 @@
+db:
+  host: localhost
+  user: user
+  name: postgres
+  password: password
+grpc:
+  port: 44044
+  timeout: 10h
