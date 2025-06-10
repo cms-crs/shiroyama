@@ -3,6 +3,7 @@ package main
 import (
 	"authservice/src/app"
 	"authservice/src/config"
+	"authservice/src/database"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -14,11 +15,11 @@ func main() {
 
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	//db := database.MustConnect(cfg)
+	db := database.MustConnect(cfg)
 
 	log.Info("Starting application", slog.Any("config", cfg))
 
-	application := app.New(nil, cfg, log)
+	application := app.New(db, cfg, log)
 	go application.MustRun()
 
 	signalChan := make(chan os.Signal, 1)
