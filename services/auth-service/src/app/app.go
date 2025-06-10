@@ -2,6 +2,7 @@ package app
 
 import (
 	"authservice/src/config"
+	"authservice/src/handler"
 	"fmt"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
@@ -18,6 +19,9 @@ type App struct {
 
 func New(db *gorm.DB, cfg *config.Config, logger *slog.Logger) *App {
 	gRPCServer := grpc.NewServer()
+
+	handler.RegisterServer(gRPCServer, logger)
+
 	return &App{
 		db:   db,
 		log:  logger,
