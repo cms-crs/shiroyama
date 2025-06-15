@@ -1,0 +1,32 @@
+# Dockerfile
+
+FROM golang:1.24.2 as builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Собираем основной сервис
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o userservice ./cmd/user-service
+
+# Собираем миграции
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o migrate ./cmd/migrations
+
+FROM alpine:latest
+
+WORKDIR /root/
+
+RUN apk --no-cache add ca-certificates
+
+COPY --from=builder /app/userservice .
+COPY --from=builder /app/migrate .
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/config ./config
+
+EXPOSE 44044
+
+# По умолчанию запускаем userservice (переопределяется в docker-compose при необходимости)
+CMD ["./userservice"]
