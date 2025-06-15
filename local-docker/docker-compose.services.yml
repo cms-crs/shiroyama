@@ -1,0 +1,53 @@
+services:
+  user-service:
+    build:
+      context: ../services/userservice
+      dockerfile: ../../local-docker/dockerfiles/user.dockerfile
+    networks:
+      - backend
+    env_file:
+      - .env
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/userservice
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "44044:44044"
+    healthcheck:
+      test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      - postgres
+  team-service:
+    build:
+      context: ../services/teamservice
+      dockerfile: ../../local-docker/dockerfiles/team.dockerfile
+    networks:
+      - backend
+    env_file:
+      - .env
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/teamservice
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "44045:44045"
+    healthcheck:
+      test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      - postgres

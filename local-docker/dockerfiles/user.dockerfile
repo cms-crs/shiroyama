@@ -9,10 +9,8 @@ RUN go mod download
 
 COPY . .
 
-# Собираем основной сервис
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o userservice ./cmd/user-service
 
-# Собираем миграции
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o migrate ./cmd/migrations
 
 FROM alpine:latest
@@ -28,5 +26,4 @@ COPY --from=builder /app/config ./config
 
 EXPOSE 44044
 
-# По умолчанию запускаем userservice (переопределяется в docker-compose при необходимости)
-CMD ["./userservice"]
+CMD ["./taskservice"]
