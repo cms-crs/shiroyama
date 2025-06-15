@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"
 )
@@ -14,7 +15,7 @@ type Config struct {
 
 func MustLoad() *Config {
 	path := fetchConfigPath()
-
+	fmt.Println(path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		panic("config file not found: " + path)
 	}

@@ -7,8 +7,6 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/cms-crs/protos v0.0.8 h1:/DGyj6Ey7ALjeXxXmb318ev3DE8j2vFTLyYpL3+r9qA=
 github.com/cms-crs/protos v0.0.8/go.mod h1:6IK64Xbg6vt69s2C78r0Ql83mYzQAh4QXoO7lCKcwxM=
-github.com/cms-crs/protos v1.0.7 h1:ByTS2C4V4CsIwca0xULqiYfdB1QxIW/xTNX0xQehwvo=
-github.com/cms-crs/protos v1.0.7/go.mod h1:6IK64Xbg6vt69s2C78r0Ql83mYzQAh4QXoO7lCKcwxM=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
