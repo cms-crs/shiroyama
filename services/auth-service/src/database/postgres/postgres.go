@@ -1,4 +1,4 @@
-package database
+package postgres
 
 import (
 	"authservice/src/config"
@@ -18,11 +18,12 @@ func MustConnect(cfg *config.Config) *gorm.DB {
 func Connect(cfg *config.Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.DB.Host,
-		cfg.DB.User,
-		cfg.DB.Password,
-		cfg.DB.Name,
+		cfg.Postgres.Host,
+		cfg.Postgres.User,
+		cfg.Postgres.Password,
+		cfg.Postgres.Name,
 	)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {

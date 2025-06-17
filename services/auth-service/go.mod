@@ -3,11 +3,12 @@ module authservice
 go 1.24.2
 
 require (
-	github.com/cms-crs/protos v1.0.7
+	github.com/cms-crs/protos v0.0.9
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
+	github.com/redis/go-redis/v9 v9.10.0
 	golang.org/x/crypto v0.39.0
 	google.golang.org/grpc v1.73.0
 	gorm.io/driver/postgres v1.6.0
@@ -16,6 +17,8 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

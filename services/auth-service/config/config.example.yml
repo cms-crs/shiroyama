@@ -1,4 +1,4 @@
-db:
+postgres:
   host: localhost
   user: user
   name: postgres
@@ -6,3 +6,10 @@ db:
 grpc:
   port: 44044
   timeout: 10h
+redis:
+  port: 44044
+  host: localhost
+  ttl: 24h
+jwt:
+  accessTTL: 20s
+  refreshTTL: 90 # days

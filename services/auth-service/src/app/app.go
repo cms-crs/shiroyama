@@ -6,6 +6,7 @@ import (
 	"authservice/src/repository"
 	"authservice/src/service"
 	"fmt"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 	"log/slog"
@@ -14,24 +15,26 @@ import (
 
 type App struct {
 	db   *gorm.DB
+	rdb  *redis.Client
 	log  *slog.Logger
 	conf *config.Config
 	gRPC *grpc.Server
 }
 
-func New(db *gorm.DB, cfg *config.Config, logger *slog.Logger) *App {
+func New(db *gorm.DB, rdb *redis.Client, cfg *config.Config, logger *slog.Logger) *App {
 	gRPCServer := grpc.NewServer()
 
-	authRepository, err := repository.NewAuthRepository(db)
+	authRepository, err := repository.NewAuthRepository(db, rdb, cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	authService := service.NewAuthService(authRepository, logger)
+	authService := service.NewAuthService(authRepository, logger, cfg)
 	handler.RegisterServer(gRPCServer, authService, logger)
 
 	return &App{
 		db:   db,
+		rdb:  rdb,
 		log:  logger,
 		conf: cfg,
 		gRPC: gRPCServer,
@@ -59,7 +62,7 @@ func (app *App) Run() error {
 
 	log.Info("Starting gRPC server", listener.Addr().String())
 
-	if err := app.gRPC.Serve(listener); err != nil {
+	if err = app.gRPC.Serve(listener); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 

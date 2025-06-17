@@ -3,7 +3,9 @@ package main
 import (
 	"authservice/src/app"
 	"authservice/src/config"
-	"authservice/src/database"
+	"authservice/src/database/postgres"
+	"authservice/src/database/redis"
+	"github.com/joho/godotenv"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -11,15 +13,20 @@ import (
 )
 
 func main() {
+	// load env to get secret key
+	err := godotenv.Load(".env")
+	if err != nil {
+		panic("Error loading .env file")
+	}
+	
 	cfg := config.MustLoad()
 
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	db := database.MustConnect(cfg)
+	db := postgres.MustConnect(cfg)
+	rdb := redis.MustConnect(cfg)
 
-	log.Info("Starting application", slog.Any("config", cfg))
-
-	application := app.New(db, cfg, log)
+	application := app.New(db, rdb, cfg, log)
 	go application.MustRun()
 
 	signalChan := make(chan os.Signal, 1)

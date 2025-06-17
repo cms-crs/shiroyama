@@ -1,16 +1,16 @@
 package config
 
 import (
-	"errors"
 	"flag"
 	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/joho/godotenv"
 	"os"
 )
 
 type Config struct {
-	DB   DatabaseConfig `yaml:"db"`
-	Grpc GRPCConfig     `yaml:"grpc"`
+	Postgres PostgresConfig `yaml:"postgres"`
+	Grpc     GRPCConfig     `yaml:"grpc"`
+	Redis    RedisConfig    `yaml:"redis"`
+	JWT      JWTConfig      `yaml:"jwt"`
 }
 
 func MustLoad() *Config {
@@ -47,11 +47,6 @@ func fetchConfigPath() (string, error) {
 
 	flag.StringVar(&configPath, "config", "", "config file path")
 	flag.Parse()
-
-	err := godotenv.Load(".env")
-	if err != nil {
-		return "", errors.New("error loading .env file")
-	}
 
 	if configPath == "" {
 		configPath = os.Getenv("CONFIG_PATH")

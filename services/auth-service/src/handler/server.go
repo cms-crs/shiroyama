@@ -13,6 +13,8 @@ import (
 type AuthService interface {
 	Register(ctx context.Context, request dto.RegisterRequest) (*dto.RegisterResponse, error)
 	Login(ctx context.Context, request dto.LoginRequest) (*dto.LoginResponse, error)
+	ValidateToken(ctx context.Context, token string) (bool, error)
+	RefreshToken(ctx context.Context, refreshToken string) (string, error)
 }
 
 type server struct {
@@ -81,6 +83,42 @@ func (s *server) Login(ctx context.Context, in *auth.LoginRequest) (*auth.LoginR
 	}
 
 	return &auth.LoginResponse{
-		AccessToken: loginResponse.Token,
+		AccessToken:  loginResponse.AccessToken,
+		RefreshToken: loginResponse.RefreshToken,
+	}, nil
+}
+
+func (s *server) ValidateToken(ctx context.Context, in *auth.ValidateTokenRequest) (*auth.ValidateTokenResponse, error) {
+	const op = "grpc.ValidateToken"
+
+	log := s.logger.With(slog.String("op", op))
+
+	isValid, err := s.authService.ValidateToken(ctx, in.Token)
+	if err != nil {
+		log.Debug("validate token failed", "error", err)
+		return &auth.ValidateTokenResponse{
+			Valid: false,
+		}, nil
+	}
+
+	return &auth.ValidateTokenResponse{
+		Valid: isValid,
+	}, nil
+}
+
+func (s *server) RefreshToken(ctx context.Context, in *auth.RefreshTokenRequest) (*auth.RefreshTokenResponse, error) {
+	const op = "grpc.RefreshToken"
+
+	log := s.logger.With(slog.String("op", op))
+
+	accessToken, err := s.authService.RefreshToken(ctx, in.RefreshToken)
+	if err != nil {
+		log.Debug("refresh token failed", "error", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &auth.RefreshTokenResponse{
+		RefreshToken: in.RefreshToken,
+		AccessToken:  accessToken,
 	}, nil
 }
