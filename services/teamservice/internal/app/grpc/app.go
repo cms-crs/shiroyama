@@ -21,10 +21,10 @@ type App struct {
 func New(log *slog.Logger, port int, db *sql.DB) *App {
 	gRPCServer := grpc.NewServer()
 
-	teamRepository := teamRepo.NewTeamRepository(log, db)
-	userService := teamService.NewTeamService(log, teamRepository)
+	repository := teamRepo.NewTeamRepository(log, db)
+	service := teamService.NewTeamService(log, repository)
 
-	handler.Register(gRPCServer, log, userService)
+	handler.Register(gRPCServer, log, service)
 
 	return &App{
 		log:  log,

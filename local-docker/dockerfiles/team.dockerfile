@@ -26,4 +26,4 @@ COPY --from=builder /app/config ./config
 
 EXPOSE 44044
 
-CMD ["./taskservice"]
+CMD ["./teamservice"]

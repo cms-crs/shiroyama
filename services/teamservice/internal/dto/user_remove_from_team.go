@@ -1,6 +1,6 @@
 package dto
 
 type RemoveUserFromTeamRequest struct {
-	UserId string
-	TeamId string
+	UserID string
+	TeamID string
 }

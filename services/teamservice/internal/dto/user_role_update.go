@@ -1,7 +1,7 @@
 package dto
 
-type UpdateUserRole struct {
-	TeamId string
-	UserId string
+type UpdateUserRoleRequest struct {
+	TeamID string
+	UserID string
 	Role   string
 }

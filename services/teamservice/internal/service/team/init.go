@@ -20,13 +20,17 @@ type Repository interface {
 		ctx context.Context,
 		ID string,
 	) (*entity.Team, error)
+	UpdateTeam(
+		ctx context.Context,
+		team *entity.Team,
+	) (*entity.Team, error)
 	GetUserTeams(
 		ctx context.Context,
 		UserID string,
 	) ([]*entity.Team, error)
 	AddUserToTeam(
 		ctx context.Context,
-		req *dto.AddUserToTeamRequest,
+		req *entity.TeamMember,
 	) error
 	RemoveUserFromTeam(
 		ctx context.Context,
@@ -34,22 +38,22 @@ type Repository interface {
 	) error
 	UpdateUserRole(
 		ctx context.Context,
-		req *dto.UpdateUserRole,
+		req *dto.UpdateUserRoleRequest,
 	) error
 	GetTeamMembers(
 		ctx context.Context,
 		ID string,
-	) ([]string, error)
+	) ([]*entity.TeamMember, error)
 }
 
 type Service struct {
 	log            *slog.Logger
-	userRepository Repository
+	teamRepository Repository
 }
 
-func NewTeamService(log *slog.Logger, userRepository Repository) *Service {
+func NewTeamService(log *slog.Logger, teamRepository Repository) *Service {
 	return &Service{
 		log:            log,
-		userRepository: userRepository,
+		teamRepository: teamRepository,
 	}
 }

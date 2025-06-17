@@ -1,10 +1,15 @@
 package dto
 
-import "userservice/internal/entity"
+import (
+	"time"
+	"userservice/internal/entity"
+)
 
 type TeamMember struct {
-	UserId string
-	TeamId string
-	Role   string
-	User   entity.User
+	UserID    string
+	TeamID    string
+	Role      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	User      entity.User
 }

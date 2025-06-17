@@ -2,13 +2,13 @@ package dto
 
 import "time"
 
-type CreateTeamRequest struct {
+type UpdateTeamRequest struct {
+	ID          string
 	Name        string
 	Description string
-	CreatedBy   string
 }
 
-type CreateTeamResponse struct {
+type UpdateTeamResponse struct {
 	ID          string
 	Name        string
 	Description string

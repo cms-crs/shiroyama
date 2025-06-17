@@ -1,7 +1,7 @@
 package dto
 
 type AddUserToTeamRequest struct {
-	UserId string
-	TeamId string
+	UserID string
+	TeamID string
 	Role   string
 }

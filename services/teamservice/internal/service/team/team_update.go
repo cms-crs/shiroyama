@@ -6,24 +6,23 @@ import (
 	"userservice/internal/entity"
 )
 
-func (service *Service) CreateTeam(
+func (service *Service) UpdateTeam(
 	ctx context.Context,
-	req *dto.CreateTeamRequest,
-) (*dto.CreateTeamResponse, error) {
-	// todo: implement check for createdBy
-
+	req *dto.UpdateTeamRequest,
+) (*dto.UpdateTeamResponse, error) {
 	team := &entity.Team{
+		ID:          req.ID,
 		Name:        req.Name,
 		Description: req.Description,
 	}
 
-	team, err := service.teamRepository.CreateTeam(ctx, team)
+	team, err := service.teamRepository.UpdateTeam(ctx, team)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &dto.CreateTeamResponse{
+	return &dto.UpdateTeamResponse{
 		ID:          team.ID,
 		Name:        team.Name,
 		Description: team.Description,
