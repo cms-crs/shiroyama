@@ -5,7 +5,7 @@ go 1.24.2
 toolchain go1.24.4
 
 require (
-	github.com/cms-crs/protos v0.0.8
+	github.com/cms-crs/protos v0.0.9
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/ilyakaznacheev/cleanenv v1.5.0

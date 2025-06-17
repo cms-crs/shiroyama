@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	userv1 "github.com/cms-crs/protos/go/proto/user"
+	"github.com/cms-crs/protos/gen/go/user_service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
