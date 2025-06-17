@@ -1,7 +1,6 @@
 package dto
 
 import (
-	userv1 "github.com/cms-crs/protos/gen/go/user_service"
 	"github.com/go-playground/validator"
 	"time"
 )
@@ -22,11 +21,4 @@ type CreateUserResponse struct {
 func (req *CreateUserRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(req)
-}
-
-func NewCreateUserRequest(req *userv1.CreateUserRequest) *CreateUserRequest {
-	return &CreateUserRequest{
-		req.Username,
-		req.Email,
-	}
 }

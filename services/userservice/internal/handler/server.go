@@ -2,7 +2,7 @@ package handler
 
 import (
 	"context"
-	userv1 "github.com/cms-crs/protos/gen/go/user_service"
+	"github.com/cms-crs/protos/gen/go/user_service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,33 +35,36 @@ type UserService interface {
 	) error
 }
 
-type apiServer struct {
+type GrpcHandler struct {
 	userv1.UnimplementedUserServiceServer
 	log         *slog.Logger
 	userService UserService
 }
 
 func Register(gRPC *grpc.Server, log *slog.Logger, userService UserService) {
-	userv1.RegisterUserServiceServer(gRPC, &apiServer{
+	userv1.RegisterUserServiceServer(gRPC, GrpcHandler{
 		log:         log,
 		userService: userService,
 	})
 }
 
-func (apiServer *apiServer) CreateUser(ctx context.Context, request *userv1.CreateUserRequest) (*userv1.User, error) {
+func (handler GrpcHandler) CreateUser(ctx context.Context, request *userv1.CreateUserRequest) (*userv1.User, error) {
 	const op = "gRPC.CreateUser"
 
-	createUserRequest := dto.NewCreateUserRequest(request)
+	createUserRequest := &dto.CreateUserRequest{
+		Email:    request.Email,
+		Username: request.Username,
+	}
 
 	err := createUserRequest.Validate()
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	createUserResponse, err := apiServer.userService.CreateUser(ctx, createUserRequest)
+	createUserResponse, err := handler.userService.CreateUser(ctx, createUserRequest)
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -74,20 +77,20 @@ func (apiServer *apiServer) CreateUser(ctx context.Context, request *userv1.Crea
 	}, nil
 }
 
-func (apiServer *apiServer) GetUser(ctx context.Context, request *userv1.GetUserRequest) (*userv1.User, error) {
+func (handler GrpcHandler) GetUser(ctx context.Context, request *userv1.GetUserRequest) (*userv1.User, error) {
 	const op = "gRPC.GetUser"
 
 	getUserRequest := &dto.GetUserRequest{ID: request.Id}
 
 	err := getUserRequest.Validate()
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	getUserResponse, err := apiServer.userService.GetUser(ctx, getUserRequest)
+	getUserResponse, err := handler.userService.GetUser(ctx, getUserRequest)
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -100,20 +103,20 @@ func (apiServer *apiServer) GetUser(ctx context.Context, request *userv1.GetUser
 	}, nil
 }
 
-func (apiServer *apiServer) GetUsersByIds(ctx context.Context, request *userv1.GetUsersByIdsRequest) (*userv1.GetUsersByIdsResponse, error) {
+func (handler GrpcHandler) GetUsersByIds(ctx context.Context, request *userv1.GetUsersByIdsRequest) (*userv1.GetUsersByIdsResponse, error) {
 	const op = "gRPC.GetUsersByIds"
 
 	getUsersByIdsRequest := &dto.GetUsersByIdsRequest{IDs: request.Ids}
 
 	err := getUsersByIdsRequest.Validate()
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	getUsersByIdsResponse, err := apiServer.userService.GetUsersByIds(ctx, getUsersByIdsRequest.IDs)
+	getUsersByIdsResponse, err := handler.userService.GetUsersByIds(ctx, getUsersByIdsRequest.IDs)
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -133,7 +136,7 @@ func (apiServer *apiServer) GetUsersByIds(ctx context.Context, request *userv1.G
 	}, nil
 }
 
-func (apiServer *apiServer) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) (*userv1.User, error) {
+func (handler GrpcHandler) UpdateUser(ctx context.Context, req *userv1.UpdateUserRequest) (*userv1.User, error) {
 	const op = "gRPC.UpdateUser"
 
 	updateUserRequest := &dto.UpdateUserRequest{
@@ -141,9 +144,9 @@ func (apiServer *apiServer) UpdateUser(ctx context.Context, req *userv1.UpdateUs
 		Username: req.Username,
 	}
 
-	updateUserResponse, err := apiServer.userService.UpdateUser(ctx, updateUserRequest)
+	updateUserResponse, err := handler.userService.UpdateUser(ctx, updateUserRequest)
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -156,12 +159,12 @@ func (apiServer *apiServer) UpdateUser(ctx context.Context, req *userv1.UpdateUs
 	}, nil
 }
 
-func (apiServer *apiServer) DeleteUser(ctx context.Context, request *userv1.DeleteUserRequest) (*emptypb.Empty, error) {
+func (handler GrpcHandler) DeleteUser(ctx context.Context, request *userv1.DeleteUserRequest) (*emptypb.Empty, error) {
 	const op = "gRPC.DeleteUser"
 
-	err := apiServer.userService.DeleteUser(ctx, request.Id)
+	err := handler.userService.DeleteUser(ctx, request.Id)
 	if err != nil {
-		apiServer.log.Error(op, err.Error())
+		handler.log.Error(op, err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
