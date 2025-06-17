@@ -1,0 +1,12 @@
+env:
+grpc:
+  port:
+  timeout:
+db:
+  host:
+  user:
+  name:
+  password:
+  max_open_connections:
+  max_idle_connections:
+  max_lifetime:
