@@ -6,6 +6,8 @@ import (
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"
+	"userservice/internal/clients"
+	"userservice/internal/config"
 	"userservice/internal/handler"
 	teamRepo "userservice/internal/repository/team"
 	teamService "userservice/internal/service/team"
@@ -18,11 +20,16 @@ type App struct {
 	db   *sql.DB
 }
 
-func New(log *slog.Logger, port int, db *sql.DB) *App {
+func New(log *slog.Logger, port int, db *sql.DB, cfg *config.Config) *App {
 	gRPCServer := grpc.NewServer()
 
+	userClient, err := clients.NewUserClient(cfg.UserService.Address)
+	if err != nil {
+		log.Error(err.Error())
+		panic(err.Error())
+	}
 	repository := teamRepo.NewTeamRepository(log, db)
-	service := teamService.NewTeamService(log, repository)
+	service := teamService.NewTeamService(log, repository, userClient)
 
 	handler.Register(gRPCServer, log, service)
 

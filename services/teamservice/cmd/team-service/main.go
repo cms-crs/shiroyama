@@ -24,7 +24,7 @@ func main() {
 	db := database.MustLoad(cfg)
 
 	log.Info("Starting application", slog.Any("config", cfg))
-	application := app.New(log, cfg.Grpc.Port, db)
+	application := app.New(log, cfg.Grpc.Port, db, cfg)
 	go application.GRPCServer.MustRun()
 
 	signalChan := make(chan os.Signal, 1)

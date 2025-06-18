@@ -3,6 +3,7 @@ package team
 import (
 	"context"
 	"log/slog"
+	"userservice/internal/clients"
 	"userservice/internal/dto"
 	"userservice/internal/entity"
 )
@@ -49,11 +50,13 @@ type Repository interface {
 type Service struct {
 	log            *slog.Logger
 	teamRepository Repository
+	userClient     *clients.UserClient
 }
 
-func NewTeamService(log *slog.Logger, teamRepository Repository) *Service {
+func NewTeamService(log *slog.Logger, teamRepository Repository, userClient *clients.UserClient) *Service {
 	return &Service{
 		log:            log,
 		teamRepository: teamRepository,
+		userClient:     userClient,
 	}
 }
