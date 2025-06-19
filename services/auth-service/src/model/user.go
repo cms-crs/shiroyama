@@ -9,4 +9,5 @@ type User struct {
 	Email        string `gorm:"unique"`
 	Password     []byte
 	RefreshToken string
+	UserID       string `gorm:"unique"`
 }

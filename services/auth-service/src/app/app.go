@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
 	"log/slog"
 	"net"
+	"os"
 )
 
 type App struct {
@@ -19,9 +21,15 @@ type App struct {
 	log  *slog.Logger
 	conf *config.Config
 	gRPC *grpc.Server
+	conn *grpc.ClientConn
 }
 
 func New(db *gorm.DB, rdb *redis.Client, cfg *config.Config, logger *slog.Logger) *App {
+	userConnection, err := grpc.NewClient(os.Getenv("USER_SERVICE_ADDR"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+
 	gRPCServer := grpc.NewServer()
 
 	authRepository, err := repository.NewAuthRepository(db, rdb, cfg)
@@ -29,7 +37,7 @@ func New(db *gorm.DB, rdb *redis.Client, cfg *config.Config, logger *slog.Logger
 		panic(err)
 	}
 
-	authService := service.NewAuthService(authRepository, logger, cfg)
+	authService := service.NewAuthService(authRepository, logger, cfg, userConnection)
 	handler.RegisterServer(gRPCServer, authService, logger)
 
 	return &App{
@@ -38,6 +46,7 @@ func New(db *gorm.DB, rdb *redis.Client, cfg *config.Config, logger *slog.Logger
 		log:  logger,
 		conf: cfg,
 		gRPC: gRPCServer,
+		conn: userConnection,
 	}
 }
 
@@ -77,6 +86,10 @@ func (app *App) Stop() {
 	)
 
 	log.Info("Stopping gRPC server", slog.Int("port", app.conf.Grpc.Port))
+
+	err := app.conn.Close()
+	if err != nil {
+	}
 
 	app.gRPC.GracefulStop()
 }
