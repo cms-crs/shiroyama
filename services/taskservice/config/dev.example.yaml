@@ -1,12 +1,13 @@
-env:
+env: "local"
 grpc:
-  port:
-  timeout:
+  port: 44044
+  timeout: 10h
 db:
-  host:
-  user:
-  name:
-  password:
-  max_open_connections:
-  max_idle_connections:
-  max_lifetime:
+  host: postgres
+  port: 3306
+  user: user
+  name: postgres
+  password: password
+  max_open_connections: 10
+  max_idle_connections: 5
+  max_lifetime: 60

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator"
 	"taskservice/internal/entity"
+	"time"
 )
 
 type CreateTaskRequest struct {
@@ -12,9 +13,11 @@ type CreateTaskRequest struct {
 }
 
 type CreateTaskResponse struct {
-	ID          uint64
+	ID          uint
 	Title       string
 	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (r *CreateTaskRequest) Validate() error {
@@ -28,6 +31,8 @@ func NewCreateTaskResponse(task *entity.Task) *CreateTaskResponse {
 		ID:          task.ID,
 		Title:       task.Title,
 		Description: task.Description,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
 	}
 }
 
@@ -36,5 +41,7 @@ func NewGetTaskResponse(task *entity.Task) *GetTaskResponse {
 		ID:          task.ID,
 		Title:       task.Title,
 		Description: task.Description,
+		CreatedAt:   task.CreatedAt,
+		UpdatedAt:   task.UpdatedAt,
 	}
 }

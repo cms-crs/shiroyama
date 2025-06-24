@@ -1,7 +1,9 @@
 package entity
 
+import "gorm.io/gorm"
+
 type Task struct {
-	ID          uint64 `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
 	Title       string `gorm:"size:255;not null"`
 	Description string `gorm:"size:255"`
 }

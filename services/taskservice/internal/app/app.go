@@ -15,7 +15,6 @@ func New(
 	grpcPort int,
 	db *gorm.DB,
 ) *App {
-
 	return &App{
 		GRPCServer: grpcapp.New(logger, grpcPort, db),
 	}

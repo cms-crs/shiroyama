@@ -3,12 +3,15 @@ package taskservicegrpc
 import (
 	"context"
 	"errors"
-	"github.com/ShiroyamaY/protos/gen/go/taskservice"
+	"github.com/cms-crs/protos/gen/go/task_service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 	"log/slog"
+	"strconv"
 	"taskservice/internal/dto"
 )
 
@@ -28,19 +31,19 @@ type TaskService interface {
 }
 
 type serverAPI struct {
-	taskservice.UnimplementedTaskServiceServer
+	taskv1.UnimplementedTaskServiceServer
 	log         *slog.Logger
 	taskService TaskService
 }
 
 func Register(gRPC *grpc.Server, taskService TaskService, log *slog.Logger) {
-	taskservice.RegisterTaskServiceServer(gRPC, serverAPI{
+	taskv1.RegisterTaskServiceServer(gRPC, serverAPI{
 		taskService: taskService,
 		log:         log,
 	})
 }
 
-func (server serverAPI) CreateTask(ctx context.Context, req *taskservice.CreateTaskRequest) (*taskservice.Task, error) {
+func (server serverAPI) CreateTask(ctx context.Context, req *taskv1.CreateTaskRequest) (*taskv1.Task, error) {
 	const op = "serverAPI.CreateTask"
 
 	log := server.log.With(
@@ -69,14 +72,16 @@ func (server serverAPI) CreateTask(ctx context.Context, req *taskservice.CreateT
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	return &taskservice.Task{
-		Id:          task.ID,
+	return &taskv1.Task{
+		Id:          strconv.Itoa(int(task.ID)),
 		Title:       task.Title,
 		Description: task.Description,
+		CreatedAt:   timestamppb.New(task.CreatedAt),
+		UpdatedAt:   timestamppb.New(task.UpdatedAt),
 	}, nil
 }
 
-func (server serverAPI) GetTask(ctx context.Context, req *taskservice.GetTaskRequest) (*taskservice.Task, error) {
+func (server serverAPI) GetTask(ctx context.Context, req *taskv1.GetTaskRequest) (*taskv1.Task, error) {
 	const op = "serverAPI.GetTask"
 
 	log := server.log.With(
@@ -88,11 +93,15 @@ func (server serverAPI) GetTask(ctx context.Context, req *taskservice.GetTaskReq
 		return nil, status.Error(codes.InvalidArgument, "request cannot be nil")
 	}
 
+	id, err := strconv.Atoi(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	request := &dto.GetTaskRequest{
-		ID: req.Id,
+		ID: uint(id),
 	}
 
-	err := request.Validate()
+	err = request.Validate()
 	if err != nil {
 		log.Debug("validate get task request failed", "error", err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -107,14 +116,16 @@ func (server serverAPI) GetTask(ctx context.Context, req *taskservice.GetTaskReq
 		return nil, status.Error(codes.Internal, "internal server error: "+err.Error())
 	}
 
-	return &taskservice.Task{
-		Id:          taskResponse.ID,
+	return &taskv1.Task{
+		Id:          strconv.Itoa(int(taskResponse.ID)),
 		Title:       taskResponse.Title,
 		Description: taskResponse.Description,
+		CreatedAt:   timestamppb.New(taskResponse.CreatedAt),
+		UpdatedAt:   timestamppb.New(taskResponse.UpdatedAt),
 	}, nil
 }
 
-func (server serverAPI) UpdateTask(ctx context.Context, req *taskservice.UpdateTaskRequest) (*taskservice.Task, error) {
+func (server serverAPI) UpdateTask(ctx context.Context, req *taskv1.UpdateTaskRequest) (*taskv1.Task, error) {
 	const op = "serverAPI.GetTask"
 
 	log := server.log.With(
@@ -126,13 +137,17 @@ func (server serverAPI) UpdateTask(ctx context.Context, req *taskservice.UpdateT
 		return nil, status.Error(codes.InvalidArgument, "request cannot be nil")
 	}
 
+	id, err := strconv.Atoi(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	request := &dto.UpdateTaskRequest{
-		ID:          req.Id,
+		ID:          uint(id),
 		Title:       req.Title,
 		Description: req.Description,
 	}
 
-	err := request.Validate()
+	err = request.Validate()
 	if err != nil {
 		log.Debug("validate update task request failed", "error", err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -147,14 +162,16 @@ func (server serverAPI) UpdateTask(ctx context.Context, req *taskservice.UpdateT
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &taskservice.Task{
-		Id:          taskResponse.ID,
+	return &taskv1.Task{
+		Id:          strconv.Itoa(int(taskResponse.ID)),
 		Title:       taskResponse.Title,
 		Description: taskResponse.Description,
+		CreatedAt:   timestamppb.New(taskResponse.CreatedAt),
+		UpdatedAt:   timestamppb.New(taskResponse.UpdatedAt),
 	}, nil
 }
 
-func (server serverAPI) DeleteTask(ctx context.Context, req *taskservice.DeleteTaskRequest) (*taskservice.DeleteTaskResponse, error) {
+func (server serverAPI) DeleteTask(ctx context.Context, req *taskv1.DeleteTaskRequest) (*emptypb.Empty, error) {
 	const op = "serverAPI.DeleteTask"
 
 	log := server.log.With(
@@ -166,17 +183,21 @@ func (server serverAPI) DeleteTask(ctx context.Context, req *taskservice.DeleteT
 		return nil, status.Error(codes.InvalidArgument, "request cannot be nil")
 	}
 
+	id, err := strconv.Atoi(req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	request := &dto.DeleteTaskRequest{
-		ID: req.Id,
+		ID: uint(id),
 	}
 
-	err := request.Validate()
+	err = request.Validate()
 	if err != nil {
 		log.Debug("validate delete task request failed", "error", err)
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	response, err := server.taskService.DeleteTask(ctx, request)
+	_, err = server.taskService.DeleteTask(ctx, request)
 	if err != nil {
 		log.Error("delete task failed", "error", err)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -185,7 +206,5 @@ func (server serverAPI) DeleteTask(ctx context.Context, req *taskservice.DeleteT
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &taskservice.DeleteTaskResponse{
-		Id: response.ID,
-	}, nil
+	return nil, nil
 }

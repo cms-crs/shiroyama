@@ -5,11 +5,11 @@ import (
 )
 
 type DeleteTaskRequest struct {
-	ID uint64 `json:"id" validate:"required"`
+	ID uint `json:"id" validate:"required"`
 }
 
 type DeleteTaskResponse struct {
-	ID uint64
+	ID uint
 }
 
 func (r *DeleteTaskRequest) Validate() error {
