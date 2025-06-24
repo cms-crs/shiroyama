@@ -1,0 +1,36 @@
+services:
+  user-migrate:
+    build:
+      context: ../services/userservice
+      dockerfile: ../../local-docker/dockerfiles/user.dockerfile
+    command: [ "./migrate" ]
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    healthcheck:
+      test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+  team-migrate:
+    build:
+      context: ../services/teamservice
+      dockerfile: ../../local-docker/dockerfiles/team.dockerfile
+    command: [ "./migrate" ]
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    healthcheck:
+      test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+networks:
+  backend:
+    external: true
