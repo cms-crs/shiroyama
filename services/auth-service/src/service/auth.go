@@ -31,6 +31,7 @@ type AuthService struct {
 
 type TokenClaims struct {
 	Email string `json:"email"`
+	Role  string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -79,6 +80,7 @@ func (s *AuthService) generateAccessToken(user *model.User) (string, error) {
 
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, TokenClaims{
 		Email: user.Email,
+		Role:  user.Role.String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   strconv.Itoa(int(user.ID)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.config.JWT.AccessTokenTTL)),
@@ -94,6 +96,7 @@ func (s *AuthService) generateRefreshToken(user *model.User) (string, error) {
 
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, TokenClaims{
 		Email: user.Email,
+		Role:  user.Role.String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   strconv.Itoa(int(user.ID)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * time.Duration(s.config.JWT.RefreshTokenTTL))),

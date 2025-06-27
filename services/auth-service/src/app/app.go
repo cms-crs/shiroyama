@@ -24,7 +24,7 @@ type App struct {
 func New(db *gorm.DB, rdb *redis.Client, cfg *config.Config, logger *slog.Logger) *App {
 	gRPCServer := grpc.NewServer()
 
-	authRepository, err := repository.NewAuthRepository(db, rdb, cfg)
+	authRepository, err := repository.NewAuthRepository(db, rdb, cfg, logger)
 	if err != nil {
 		panic(err)
 	}
