@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
+	"log/slog"
 	"strconv"
 )
 
@@ -15,8 +16,12 @@ type AuthRepository struct {
 	config *config.Config
 }
 
-func NewAuthRepository(db *gorm.DB, rdb *redis.Client, config *config.Config) (*AuthRepository, error) {
-	err := db.AutoMigrate(&model.User{})
+func NewAuthRepository(db *gorm.DB, rdb *redis.Client, config *config.Config, log *slog.Logger) (*AuthRepository, error) {
+	err := createRoleType(db)
+	if err != nil {
+		log.Warn("some error happened while creating role type", err)
+	}
+	err = db.AutoMigrate(&model.User{})
 	if err != nil {
 		return nil, err
 	}
@@ -26,6 +31,24 @@ func NewAuthRepository(db *gorm.DB, rdb *redis.Client, config *config.Config) (*
 		rdb:    rdb,
 		config: config,
 	}, nil
+}
+
+func createRoleType(db *gorm.DB) error {
+	err := db.Exec(`
+		  DO $$
+		  BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+			  CREATE TYPE user_role AS ENUM ('Admin', 'Regular');
+			END IF;
+		  END
+		  $$;
+		`).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo *AuthRepository) CreateUser(ctx context.Context, user model.User) (uint, error) {
