@@ -39,4 +39,5 @@ type User struct {
 	Password     []byte
 	RefreshToken string
 	Role         role `gorm:"type:user_role;default:'Regular';not null"`
+	UserID       string `gorm:"unique"`
 }

@@ -5,8 +5,10 @@ import (
 	"authservice/src/dto"
 	"authservice/src/model"
 	"context"
+	"github.com/cms-crs/protos/gen/go/user_service"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"log/slog"
@@ -27,6 +29,7 @@ type AuthService struct {
 	logger         *slog.Logger
 	authRepository AuthRepository
 	config         *config.Config
+	userClient     userv1.UserServiceClient
 }
 
 type TokenClaims struct {
@@ -35,11 +38,13 @@ type TokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-func NewAuthService(authRepository AuthRepository, logger *slog.Logger, config *config.Config) *AuthService {
+func NewAuthService(authRepository AuthRepository, logger *slog.Logger, config *config.Config, userConn *grpc.ClientConn) *AuthService {
+
 	return &AuthService{
 		logger:         logger,
 		authRepository: authRepository,
 		config:         config,
+		userClient:     userv1.NewUserServiceClient(userConn),
 	}
 }
 
@@ -52,6 +57,7 @@ func (s *AuthService) Register(ctx context.Context, request dto.RegisterRequest)
 
 	email := request.Email
 	password := request.Password
+	username := request.Username
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -59,9 +65,19 @@ func (s *AuthService) Register(ctx context.Context, request dto.RegisterRequest)
 		return nil, err
 	}
 
+	userClientUser, err := s.userClient.CreateUser(ctx, &userv1.CreateUserRequest{
+		Email:    email,
+		Username: username,
+	})
+	if err != nil {
+		log.Error("Error creating user")
+		return nil, err
+	}
+
 	user := model.User{
 		Email:    email,
 		Password: hash,
+		UserID:   userClientUser.GetId(),
 	}
 
 	id, err := s.authRepository.CreateUser(ctx, user)

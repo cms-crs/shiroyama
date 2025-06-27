@@ -42,6 +42,7 @@ func (s *server) Register(ctx context.Context, in *auth.RegisterRequest) (*auth.
 	registerRequest := dto.RegisterRequest{
 		Email:    in.GetEmail(),
 		Password: in.GetPassword(),
+		Username: in.GetUsername(),
 	}
 
 	if err := registerRequest.Validate(); err != nil {
