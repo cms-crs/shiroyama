@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 type Claims struct {
 	Email string `json:"email"`
+	Role  string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -31,12 +33,16 @@ func Auth(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
+		fmt.Println(tokenString)
+		fmt.Println(cfg.JWTSecret)
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return []byte(cfg.JWTSecret), nil
 		})
 
 		if err != nil || !token.Valid {
+			fmt.Println(err.Error())
+			fmt.Println(token.Valid)
 			utils.ErrorResponse(c, http.StatusUnauthorized, "Invalid token")
 			c.Abort()
 			return
@@ -44,6 +50,7 @@ func Auth(cfg *config.Config) gin.HandlerFunc {
 
 		c.Set("user_id", claims.Subject)
 		c.Set("email", claims.Email)
+		c.Set("role", claims.Role)
 
 		c.Next()
 	}
@@ -71,6 +78,7 @@ func OptionalAuth(cfg *config.Config) gin.HandlerFunc {
 		if err == nil && token.Valid {
 			c.Set("user_id", claims.Subject)
 			c.Set("email", claims.Email)
+			c.Set("role", claims.Role)
 		}
 
 		c.Next()

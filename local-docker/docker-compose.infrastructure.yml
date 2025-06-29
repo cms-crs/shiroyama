@@ -28,6 +28,8 @@ services:
       - AUTH_SERVICE_URL=auth-service:44046
       - USER_SERVICE_URL=user-service:44044
       - TEAM_SERVICE_URL=team-service:44045
+      - BOARD_SERVICE_URL=board-service:44048
+      - TASK_SERVICE_URL=task-service:44049
 
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -52,13 +54,15 @@ services:
       - ENABLE_TRACING=true
     depends_on:
       auth-service:
-        condition: service_healthy
+        condition: service_started
       user-service:
-        condition: service_healthy
+        condition: service_started
       team-service:
-        condition: service_healthy
+        condition: service_started
       task-service:
-        condition: service_healthy
+        condition: service_started
+      board-service:
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:

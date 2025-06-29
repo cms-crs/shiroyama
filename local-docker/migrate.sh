@@ -3,9 +3,16 @@
 set -e
 
 COMPOSE_FILES="-f docker-compose.infrastructure.yml \
-               -f docker-compose.migrations.yml"
+               -f docker-compose.migrations.yml \
+               -f docker-compose.services.yml"
 
-echo "Запуск docker сервисов для миграций..."
+if [ $# -eq 0 ]; then
+  SERVICES="user-migrate team-migrate board-migrate"
+else
+  SERVICES="$@"
+fi
 
-docker-compose $COMPOSE_FILES build postgres user-migrate team-migrate
-docker-compose $COMPOSE_FILES up postgres user-migrate team-migrate
+echo "Запуск docker-сервисов для миграций: $SERVICES"
+
+docker-compose $COMPOSE_FILES build $SERVICES
+docker-compose $COMPOSE_FILES up postgres $SERVICES

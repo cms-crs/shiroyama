@@ -31,13 +31,11 @@ type Config struct {
 }
 
 type ServiceConfig struct {
-	AuthService     string `json:"auth_service"`
-	UserService     string `json:"user_service"`
-	TeamService     string `json:"team_service"`
-	BoardService    string `json:"board_service"`
-	TaskService     string `json:"task_service"`
-	CommentService  string `json:"comment_service"`
-	ActivityService string `json:"activity_service"`
+	AuthService  string `json:"auth_service"`
+	UserService  string `json:"user_service"`
+	TeamService  string `json:"team_service"`
+	BoardService string `json:"board_service"`
+	TaskService  string `json:"task_service"`
 }
 
 func Load() (*Config, error) {
@@ -53,17 +51,16 @@ func Load() (*Config, error) {
 		AllowedHeaders: strings.Split(getEnv("ALLOWED_HEADERS", "Accept,Authorization,Content-Type,X-CSRF-Token"), ","),
 
 		JWTSecret:            getEnv("JWT_SECRET", "your-secret-key"),
-		AccessTokenDuration:  getEnvInt("ACCESS_TOKEN_DURATION", 3600),    // 1 hour
-		RefreshTokenDuration: getEnvInt("REFRESH_TOKEN_DURATION", 604800), // 7 days
+		AccessTokenDuration:  getEnvInt("ACCESS_TOKEN_DURATION", 3600),
+		RefreshTokenDuration: getEnvInt("REFRESH_TOKEN_DURATION", 604800),
 
 		Services: ServiceConfig{
-			AuthService:     getEnv("AUTH_SERVICE_URL", "localhost:50001"),
-			UserService:     getEnv("USER_SERVICE_URL", "localhost:50002"),
-			TeamService:     getEnv("TEAM_SERVICE_URL", "localhost:50003"),
-			BoardService:    getEnv("BOARD_SERVICE_URL", "localhost:50004"),
-			TaskService:     getEnv("TASK_SERVICE_URL", "localhost:50005"),
-			CommentService:  getEnv("COMMENT_SERVICE_URL", "localhost:50006"),
-			ActivityService: getEnv("ACTIVITY_SERVICE_URL", "localhost:50007"),
+			AuthService:  getEnv("AUTH_SERVICE_URL", "localhost:44046"),
+			UserService:  getEnv("USER_SERVICE_URL", "localhost:44044"),
+			TeamService:  getEnv("TEAM_SERVICE_URL", "localhost:44045"),
+			BoardService: getEnv("BOARD_SERVICE_URL", "localhost:44048"),
+			TaskService:  getEnv("TASK_SERVICE_URL", "localhost:44049"),
+			//ActivityService: getEnv("ACTIVITY_SERVICE_URL", "localhost:50007"),
 		},
 
 		RateLimitEnabled: getEnvBool("RATE_LIMIT_ENABLED", false),

@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
@@ -9,24 +10,21 @@ import (
 
 	"api-gateway/internal/config"
 
-	activityv1 "github.com/cms-crs/protos/gen/go/activity_service"
 	authv1 "github.com/cms-crs/protos/gen/go/auth_service"
 	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
-	commentv1 "github.com/cms-crs/protos/gen/go/comment_service"
 	taskv1 "github.com/cms-crs/protos/gen/go/task_service"
 	teamv1 "github.com/cms-crs/protos/gen/go/team_service"
 	userv1 "github.com/cms-crs/protos/gen/go/user_service"
 )
 
 type GRPCClients struct {
-	connections    map[string]*grpc.ClientConn
-	AuthClient     authv1.AuthServiceClient
-	UserClient     userv1.UserServiceClient
-	TeamClient     teamv1.TeamServiceClient
-	BoardClient    boardv1.BoardServiceClient
-	TaskClient     taskv1.TaskServiceClient
-	CommentClient  commentv1.CommentServiceClient
-	ActivityClient activityv1.ActivityServiceClient
+	connections map[string]*grpc.ClientConn
+	AuthClient  authv1.AuthServiceClient
+	UserClient  userv1.UserServiceClient
+	TeamClient  teamv1.TeamServiceClient
+	BoardClient boardv1.BoardServiceClient
+	TaskClient  taskv1.TaskServiceClient
+	//ActivityClient activityv1.ActivityServiceClient
 }
 
 func NewGRPCClients(cfg *config.Config) (*GRPCClients, error) {
@@ -35,12 +33,11 @@ func NewGRPCClients(cfg *config.Config) (*GRPCClients, error) {
 	}
 
 	services := map[string]string{
-		"auth": cfg.Services.AuthService,
-		"user": cfg.Services.UserService,
-		"team": cfg.Services.TeamService,
-		//"board":    cfg.Services.BoardService,
-		//"task":     cfg.Services.TaskService,
-		//"comment":  cfg.Services.CommentService,
+		"auth":  cfg.Services.AuthService,
+		"user":  cfg.Services.UserService,
+		"team":  cfg.Services.TeamService,
+		"board": cfg.Services.BoardService,
+		"task":  cfg.Services.TaskService,
 		//"activity": cfg.Services.ActivityService,
 	}
 
@@ -48,7 +45,7 @@ func NewGRPCClients(cfg *config.Config) (*GRPCClients, error) {
 		conn, err := createGRPCConnection(addr)
 		if err != nil {
 			clients.Close()
-			return nil, err
+			return nil, fmt.Errorf("failed to create GRPC connection to %s %s: %w", name, addr, err)
 		}
 		clients.connections[name] = conn
 	}
@@ -56,8 +53,8 @@ func NewGRPCClients(cfg *config.Config) (*GRPCClients, error) {
 	clients.AuthClient = authv1.NewAuthServiceClient(clients.connections["auth"])
 	clients.UserClient = userv1.NewUserServiceClient(clients.connections["user"])
 	clients.TeamClient = teamv1.NewTeamServiceClient(clients.connections["team"])
-	//clients.BoardClient = boardv1.NewBoardServiceClient(clients.connections["board"])
-	//clients.TaskClient = taskv1.NewTaskServiceClient(clients.connections["task"])
+	clients.BoardClient = boardv1.NewBoardServiceClient(clients.connections["board"])
+	clients.TaskClient = taskv1.NewTaskServiceClient(clients.connections["task"])
 	//clients.CommentClient = commentv1.NewCommentServiceClient(clients.connections["comment"])
 	//clients.ActivityClient = activityv1.NewActivityServiceClient(clients.connections["activity"])
 
@@ -107,13 +104,9 @@ func (c *GRPCClients) GetTaskClient() taskv1.TaskServiceClient {
 	return c.TaskClient
 }
 
-func (c *GRPCClients) GetCommentClient() commentv1.CommentServiceClient {
-	return c.CommentClient
-}
-
-func (c *GRPCClients) GetActivityClient() activityv1.ActivityServiceClient {
-	return c.ActivityClient
-}
+//func (c *GRPCClients) GetActivityClient() activityv1.ActivityServiceClient {
+//	return c.ActivityClient
+//}
 
 func (c *GRPCClients) HealthCheck(ctx context.Context) map[string]bool {
 	status := make(map[string]bool)

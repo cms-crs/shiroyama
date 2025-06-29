@@ -1,14 +1,16 @@
 package handlers
 
 import (
+	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
 	"net/http"
-	"time"
 
 	"api-gateway/internal/clients"
 	"api-gateway/internal/models"
 	"api-gateway/internal/utils"
 	"api-gateway/pkg/logger"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type BoardHandler struct {
@@ -52,13 +54,48 @@ func (h *BoardHandler) CreateBoard(c *gin.Context) {
 
 	h.logger.Info("Creating board", "name", req.Name, "team_id", req.TeamID, "created_by", req.CreatedBy)
 
-	board := &models.Board{
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	response, err := boardClient.CreateBoard(c.Request.Context(), &boardv1.CreateBoardRequest{
 		Name:        req.Name,
 		Description: req.Description,
-		TeamID:      req.TeamID,
+		TeamId:      req.TeamID,
 		CreatedBy:   req.CreatedBy,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to create board", "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "Team not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create board")
+		return
+	}
+
+	board := &models.Board{
+		ID:          response.Id,
+		Name:        response.Name,
+		Description: response.Description,
+		TeamID:      response.TeamId,
+		CreatedBy:   response.CreatedBy,
+		CreatedAt:   response.CreatedAt.AsTime(),
+		UpdatedAt:   response.UpdatedAt.AsTime(),
 	}
 
 	h.logger.Info("Board created successfully", "board_id", board.ID)
@@ -79,42 +116,92 @@ func (h *BoardHandler) CreateBoard(c *gin.Context) {
 // @Failure 500 {object} models.Response
 // @Router /api/v1/boards/{id} [get]
 func (h *BoardHandler) GetBoard(c *gin.Context) {
-	boardID := utils.GetParamID(c, "id")
-	if boardID == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Board ID is required")
-		return
-	}
-
-	h.logger.Info("Getting board", "board_id", boardID)
-
-	// TODO: Вызов gRPC сервиса досок
-	boardWithLists := &models.BoardWithLists{
-		Board: models.Board{
-			ID: boardID,
-		},
-		Lists: []models.ListWithTasks{
-			{
-				List: models.List{
-					ID:       "list_1",
-					BoardID:  boardID,
-					Name:     "To Do",
-					Position: 1,
-				},
-				Tasks: []models.Task{
-					{
-						ID:          "task_1",
-						ListID:      "list_1",
-						Title:       "Example Task",
-						Description: "Task description",
-						Position:    1,
-						CreatedBy:   "user_123",
-					},
-				},
-			},
-		},
-	}
-
-	utils.SuccessResponse(c, boardWithLists)
+	//boardID := utils.GetParamID(c, "id")
+	//if boardID == "" {
+	//	utils.ErrorResponse(c, http.StatusBadRequest, "Board ID is required")
+	//	return
+	//}
+	//
+	//h.logger.Info("Getting board", "board_id", boardID)
+	//
+	//boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	//response, err := boardClient.GetBoard(c.Request.Context(), &boardv1.GetBoardRequest{
+	//	Id: boardID,
+	//})
+	//
+	//if err != nil {
+	//	h.logger.Error("Failed to get board", "board_id", boardID, "error", err)
+	//
+	//	if st, ok := status.FromError(err); ok {
+	//		switch st.Code() {
+	//		case codes.InvalidArgument:
+	//			utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+	//			return
+	//		case codes.NotFound:
+	//			utils.ErrorResponse(c, http.StatusNotFound, "Board not found")
+	//			return
+	//		case codes.PermissionDenied:
+	//			utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+	//			return
+	//		case codes.Internal:
+	//			utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+	//			return
+	//		default:
+	//			utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+	//			return
+	//		}
+	//	}
+	//	utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get board")
+	//	return
+	//}
+	//
+	//boardWithLists := &models.BoardWithLists{
+	//	Board: models.Board{
+	//		ID:          response.Board.Id,
+	//		Name:        response.Board.Name,
+	//		Description: response.Board.Description,
+	//		TeamID:      response.Board.TeamId,
+	//		CreatedBy:   response.Board.CreatedBy,
+	//		CreatedAt:   response.Board.CreatedAt.AsTime(),
+	//		UpdatedAt:   response.Board.UpdatedAt.AsTime(),
+	//	},
+	//	Lists: make([]models.ListWithTasks, len(response.Lists)),
+	//}
+	//
+	//for i, list := range response.Lists {
+	//	listWithTasks := models.ListWithTasks{
+	//		List: models.List{
+	//			ID:        list.List.Id,
+	//			BoardID:   list.List.BoardId,
+	//			Name:      list.List.Name,
+	//			Position:  int(list.List.Position),
+	//			CreatedAt: list.List.CreatedAt.AsTime(),
+	//			UpdatedAt: list.List.UpdatedAt.AsTime(),
+	//		},
+	//		Tasks: make([]models.Task, len(list.Tasks)),
+	//	}
+	//
+	//	for j, task := range list.Tasks {
+	//		listWithTasks.Tasks[j] = models.Task{
+	//			ID:          task.Id,
+	//			ListID:      task.ListId,
+	//			Title:       task.Title,
+	//			Description: task.Description,
+	//			Position:    task.Position,
+	//			CreatedBy:   task.CreatedBy,
+	//			CreatedAt:   task.CreatedAt.AsTime(),
+	//			UpdatedAt:   task.UpdatedAt.AsTime(),
+	//		}
+	//		if task.DueDate != nil {
+	//			dueDate := task.DueDate.AsTime()
+	//			listWithTasks.Tasks[j].DueDate = &dueDate
+	//		}
+	//	}
+	//
+	//	boardWithLists.Lists[i] = listWithTasks
+	//}
+	//
+	//utils.SuccessResponse(c, boardWithLists)
 }
 
 // UpdateBoard godoc
@@ -148,12 +235,48 @@ func (h *BoardHandler) UpdateBoard(c *gin.Context) {
 
 	h.logger.Info("Updating board", "board_id", boardID)
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
-	board := &models.Board{
-		ID:          boardID,
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	response, err := boardClient.UpdateBoard(c.Request.Context(), &boardv1.UpdateBoardRequest{
+		Id:          boardID,
 		Name:        req.Name,
 		Description: req.Description,
-		UpdatedAt:   time.Now(),
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to update board", "board_id", boardID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "Board not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update board")
+		return
+	}
+
+	// Конвертация protobuf модели в модель API
+	board := &models.Board{
+		ID:          response.Id,
+		Name:        response.Name,
+		Description: response.Description,
+		TeamID:      response.TeamId,
+		CreatedBy:   response.CreatedBy,
+		CreatedAt:   response.CreatedAt.AsTime(),
+		UpdatedAt:   response.UpdatedAt.AsTime(),
 	}
 
 	h.logger.Info("Board updated successfully", "board_id", boardID)
@@ -183,9 +306,40 @@ func (h *BoardHandler) DeleteBoard(c *gin.Context) {
 
 	h.logger.Info("Deleting board", "board_id", boardID)
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
-	h.logger.Info("Board deleted successfully", "board_id", boardID)
-	utils.NoContentResponse(c)
+	// TODO: Добавить метод DeleteBoard в gRPC сервис
+	// boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	// _, err := boardClient.DeleteBoard(c.Request.Context(), &boardv1.DeleteBoardRequest{
+	//     Id: boardID,
+	// })
+
+	// if err != nil {
+	//     h.logger.Error("Failed to delete board", "board_id", boardID, "error", err)
+	//
+	//     if st, ok := status.FromError(err); ok {
+	//         switch st.Code() {
+	//         case codes.InvalidArgument:
+	//             utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+	//             return
+	//         case codes.NotFound:
+	//             utils.ErrorResponse(c, http.StatusNotFound, "Board not found")
+	//             return
+	//         case codes.PermissionDenied:
+	//             utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+	//             return
+	//         case codes.Internal:
+	//             utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+	//             return
+	//         default:
+	//             utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+	//             return
+	//         }
+	//     }
+	//     utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete board")
+	//     return
+	// }
+
+	// DeleteBoard не реализован в gRPC сервисе
+	utils.ErrorResponse(c, http.StatusNotImplemented, "Delete board not implemented yet")
 }
 
 // GetUserBoards godoc
@@ -209,29 +363,52 @@ func (h *BoardHandler) GetUserBoards(c *gin.Context) {
 
 	h.logger.Info("Getting user boards", "user_id", userID)
 
-	// TODO: Вызов gRPC сервиса досок
-	boards := []models.Board{
-		{
-			ID:          "board_1",
-			Name:        "Personal Board",
-			Description: "My personal tasks",
-			TeamID:      "team_1",
-			CreatedBy:   userID,
-		},
-		{
-			ID:          "board_2",
-			Name:        "Team Board",
-			Description: "Team collaboration",
-			TeamID:      "team_2",
-			CreatedBy:   "user_456",
-		},
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	response, err := boardClient.GetUserBoards(c.Request.Context(), &boardv1.GetUserBoardsRequest{
+		UserId: userID,
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to get user boards", "user_id", userID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "User not found")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get user boards")
+		return
 	}
 
-	response := &models.GetUserBoardsResponse{
+	boards := make([]models.Board, len(response.Boards))
+	for i, board := range response.Boards {
+		boards[i] = models.Board{
+			ID:          board.Id,
+			Name:        board.Name,
+			Description: board.Description,
+			TeamID:      board.TeamId,
+			CreatedBy:   board.CreatedBy,
+			CreatedAt:   board.CreatedAt.AsTime(),
+			UpdatedAt:   board.UpdatedAt.AsTime(),
+		}
+	}
+
+	apiResponse := &models.GetUserBoardsResponse{
 		Boards: boards,
 	}
 
-	utils.SuccessResponse(c, response)
+	utils.SuccessResponse(c, apiResponse)
 }
 
 // GetTeamBoards godoc
@@ -256,22 +433,55 @@ func (h *BoardHandler) GetTeamBoards(c *gin.Context) {
 
 	h.logger.Info("Getting team boards", "team_id", teamID)
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
-	boards := []models.Board{
-		{
-			ID:          "board_1",
-			Name:        "Project Alpha",
-			Description: "Alpha project board",
-			TeamID:      teamID,
-			CreatedBy:   "user_123",
-		},
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	response, err := boardClient.GetTeamBoards(c.Request.Context(), &boardv1.GetTeamBoardsRequest{
+		TeamId: teamID,
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to get team boards", "team_id", teamID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "Team not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to get team boards")
+		return
 	}
 
-	response := &models.GetTeamBoardsResponse{
+	boards := make([]models.Board, len(response.Boards))
+	for i, board := range response.Boards {
+		boards[i] = models.Board{
+			ID:          board.Id,
+			Name:        board.Name,
+			Description: board.Description,
+			TeamID:      board.TeamId,
+			CreatedBy:   board.CreatedBy,
+			CreatedAt:   board.CreatedAt.AsTime(),
+			UpdatedAt:   board.UpdatedAt.AsTime(),
+		}
+	}
+
+	apiResponse := &models.GetTeamBoardsResponse{
 		Boards: boards,
 	}
 
-	utils.SuccessResponse(c, response)
+	utils.SuccessResponse(c, apiResponse)
 }
 
 // CreateList godoc
@@ -305,14 +515,46 @@ func (h *BoardHandler) CreateList(c *gin.Context) {
 
 	h.logger.Info("Creating list", "board_id", boardID, "name", req.Name)
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	response, err := boardClient.CreateList(c.Request.Context(), &boardv1.CreateListRequest{
+		BoardId:  boardID,
+		Name:     req.Name,
+		Position: int32(req.Position),
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to create list", "board_id", boardID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "Board not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create list")
+		return
+	}
+
 	list := &models.List{
-		ID:        "list_123",
-		BoardID:   boardID,
-		Name:      req.Name,
-		Position:  req.Position,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:        response.Id,
+		BoardID:   response.BoardId,
+		Name:      response.Name,
+		Position:  int32(int(response.Position)),
+		CreatedAt: response.CreatedAt.AsTime(),
+		UpdatedAt: response.UpdatedAt.AsTime(),
 	}
 
 	h.logger.Info("List created successfully", "list_id", list.ID)
@@ -350,11 +592,45 @@ func (h *BoardHandler) UpdateList(c *gin.Context) {
 
 	h.logger.Info("Updating list", "list_id", listID)
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	response, err := boardClient.UpdateList(c.Request.Context(), &boardv1.UpdateListRequest{
+		Id:   listID,
+		Name: req.Name,
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to update list", "list_id", listID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "List not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update list")
+		return
+	}
+
 	list := &models.List{
-		ID:        listID,
-		Name:      req.Name,
-		UpdatedAt: time.Now(),
+		ID:        response.Id,
+		BoardID:   response.BoardId,
+		Name:      response.Name,
+		Position:  int32(int(response.Position)),
+		CreatedAt: response.CreatedAt.AsTime(),
+		UpdatedAt: response.UpdatedAt.AsTime(),
 	}
 
 	h.logger.Info("List updated successfully", "list_id", listID)
@@ -384,9 +660,38 @@ func (h *BoardHandler) DeleteList(c *gin.Context) {
 
 	h.logger.Info("Deleting list", "list_id", listID)
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
-	h.logger.Info("List deleted successfully", "list_id", listID)
-	utils.NoContentResponse(c)
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	_, err := boardClient.DeleteList(c.Request.Context(), &boardv1.DeleteListRequest{
+		Id: listID,
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to delete list", "list_id", listID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "List not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete list")
+		return
+	}
+
+	utils.ErrorResponse(c, http.StatusNotImplemented, "Delete list not implemented yet")
 }
 
 // ReorderLists godoc
@@ -420,53 +725,46 @@ func (h *BoardHandler) ReorderLists(c *gin.Context) {
 
 	h.logger.Info("Reordering lists", "board_id", boardID, "positions_count", len(req.Positions))
 
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
-	h.logger.Info("Lists reordered successfully", "board_id", boardID)
-	utils.SuccessResponse(c, gin.H{"message": "Lists reordered successfully"})
-}
+	positions := make([]*boardv1.ListPosition, len(req.Positions))
+	for i, pos := range req.Positions {
+		positions[i] = &boardv1.ListPosition{
+			ListId:   pos.ListID,
+			Position: int32(pos.Position),
+		}
+	}
 
-// GetBoardLabels godoc
-// @Summary Get board labels
-// @Description Get all labels for a board
-// @Tags boards
-// @Produce json
-// @Security Bearer
-// @Param id path string true "Board ID"
-// @Success 200 {object} models.Response{data=models.GetBoardLabelsResponse}
-// @Failure 400 {object} models.Response
-// @Failure 401 {object} models.Response
-// @Failure 403 {object} models.Response
-// @Failure 404 {object} models.Response
-// @Failure 500 {object} models.Response
-// @Router /api/v1/boards/{id}/labels [get]
-func (h *BoardHandler) GetBoardLabels(c *gin.Context) {
-	boardID := utils.GetParamID(c, "id")
-	if boardID == "" {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Board ID is required")
+	boardClient := h.grpcClients.GetBoardClient().(boardv1.BoardServiceClient)
+	_, err := boardClient.ReorderLists(c.Request.Context(), &boardv1.ReorderListsRequest{
+		BoardId:   boardID,
+		Positions: positions,
+	})
+
+	if err != nil {
+		h.logger.Error("Failed to reorder lists", "board_id", boardID, "error", err)
+
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.InvalidArgument:
+				utils.ErrorResponse(c, http.StatusBadRequest, st.Message())
+				return
+			case codes.NotFound:
+				utils.ErrorResponse(c, http.StatusNotFound, "Board not found")
+				return
+			case codes.PermissionDenied:
+				utils.ErrorResponse(c, http.StatusForbidden, "Permission denied")
+				return
+			case codes.Internal:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Internal server error")
+				return
+			default:
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Unknown error occurred")
+				return
+			}
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to reorder lists")
 		return
 	}
 
-	h.logger.Info("Getting board labels", "board_id", boardID)
-
-	// TODO: Проверка прав доступа и вызов gRPC сервиса досок
-	labels := []models.Label{
-		{
-			ID:      "label_1",
-			BoardID: boardID,
-			Name:    "Bug",
-			Color:   "#ff0000",
-		},
-		{
-			ID:      "label_2",
-			BoardID: boardID,
-			Name:    "Feature",
-			Color:   "#00ff00",
-		},
-	}
-
-	response := &models.GetBoardLabelsResponse{
-		Labels: labels,
-	}
-
-	utils.SuccessResponse(c, response)
+	h.logger.Info("Lists reordered successfully", "board_id", boardID)
+	utils.SuccessResponse(c, gin.H{"message": "Lists reordered successfully"})
 }

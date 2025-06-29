@@ -28,6 +28,8 @@ func New(cfg *config.Config, grpcClients *clients.GRPCClients, log logger.Logger
 	userHandler := handlers.NewUserHandler(grpcClients, log)
 	teamHandler := handlers.NewTeamHandler(grpcClients, log)
 	boardHandler := handlers.NewBoardHandler(grpcClients, log)
+	taskHandler := handlers.NewTaskHandler(grpcClients, log)
+
 	r.GET("/health", healthCheck)
 	r.GET("/ready", readinessCheck)
 
@@ -80,7 +82,6 @@ func New(cfg *config.Config, grpcClients *clients.GRPCClients, log logger.Logger
 		boards.GET("/:id", boardHandler.GetBoard)
 		boards.PUT("/:id", boardHandler.UpdateBoard)
 		boards.DELETE("/:id", boardHandler.DeleteBoard)
-		boards.GET("/:id/labels", boardHandler.GetBoardLabels)
 
 		boards.POST("/:id/lists", boardHandler.CreateList)
 		boards.PUT("/:id/lists/reorder", boardHandler.ReorderLists)
@@ -90,6 +91,14 @@ func New(cfg *config.Config, grpcClients *clients.GRPCClients, log logger.Logger
 	{
 		lists.PUT("/:id", boardHandler.UpdateList)
 		lists.DELETE("/:id", boardHandler.DeleteList)
+	}
+
+	tasks := protected.Group("/tasks")
+	{
+		tasks.POST("", taskHandler.CreateTask)
+		tasks.GET("/:id", taskHandler.GetTask)
+		tasks.PUT("/:id", taskHandler.UpdateTask)
+		tasks.DELETE("/:id", taskHandler.DeleteTask)
 	}
 
 	return r
