@@ -51,6 +51,14 @@ services:
       - ENABLE_METRICS=true
       - ENABLE_TRACING=true
     depends_on:
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      team-service:
+        condition: service_healthy
+      task-service:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:

@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o teamservice ./cmd/team-service
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o team-service ./cmd/team-service
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o migrate ./cmd/migrations
 
@@ -19,11 +19,11 @@ WORKDIR /root/
 
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /app/teamservice .
+COPY --from=builder /app/team-service .
 COPY --from=builder /app/migrate .
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/config ./config
 
-EXPOSE 44044
+EXPOSE 44045
 
-CMD ["./teamservice"]
+CMD ["./team-service"]

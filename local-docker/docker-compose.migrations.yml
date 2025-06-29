@@ -1,11 +1,11 @@
 services:
   user-migrate:
     build:
-      context: ../services/userservice
+      context: ../services/user-service
       dockerfile: ../../local-docker/dockerfiles/user.dockerfile
     command: [ "./migrate" ]
     env_file:
-      - .env
+      - .env.example
     depends_on:
       - postgres
     healthcheck:
@@ -17,11 +17,11 @@ services:
       - backend
   team-migrate:
     build:
-      context: ../services/teamservice
+      context: ../services/team-service
       dockerfile: ../../local-docker/dockerfiles/team.dockerfile
     command: [ "./migrate" ]
     env_file:
-      - .env
+      - .env.example
     depends_on:
       - postgres
     healthcheck:

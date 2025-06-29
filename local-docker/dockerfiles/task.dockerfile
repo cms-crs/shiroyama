@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o auth-service ./
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o task-service ./cmd/task-service
 
 FROM alpine:latest
 
@@ -15,9 +15,9 @@ WORKDIR /root/
 
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /app/auth-service .
+COPY --from=builder /app/task-service .
 COPY --from=builder /app/config ./config
 
-EXPOSE 44046
+EXPOSE 44049
 
-CMD ["./auth-service"]
+CMD ["./task-service"]

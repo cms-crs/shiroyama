@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o userservice ./cmd/user-service
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o user-service ./cmd/user-service
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o migrate ./cmd/migrations
 
@@ -19,11 +19,11 @@ WORKDIR /root/
 
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /app/userservice .
+COPY --from=builder /app/user-service .
 COPY --from=builder /app/migrate .
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/config ./config
 
 EXPOSE 44044
 
-CMD ["./userservice"]
+CMD ["./user-service"]

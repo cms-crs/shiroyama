@@ -1,7 +1,9 @@
 env: "local"
+
 grpc:
   port: 44044
   timeout: 10h
+
 db:
   host: postgres
   port: 3306

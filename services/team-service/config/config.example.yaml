@@ -1,0 +1,29 @@
+env: "local"
+
+grpc:
+  port: 44045
+  timeout: 10h
+
+db:
+  host: postgres
+  port: 3306
+  user: user
+  name: team
+  password: password
+  max_open_connections: 10
+  max_idle_connections: 5
+  max_lifetime: 60
+
+userService:
+  address: user-service:44044
+
+kafka:
+  brokers:
+    - kafka:29092
+  group_id: "team-service-group"
+
+  producer:
+    retryMax: 5
+    flushTimeout: 500ms
+    batchSize: 100
+    compression: snappy
