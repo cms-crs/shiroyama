@@ -1,4 +1,4 @@
-module userservice
+module taskservice
 
 go 1.24.2
 
@@ -9,6 +9,7 @@ require (
 	github.com/cms-crs/protos v0.0.9
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/golang/protobuf v1.5.4
+	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
 	google.golang.org/grpc v1.73.0

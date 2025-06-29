@@ -3,17 +3,17 @@ package team
 import (
 	"context"
 	"fmt"
-	"userservice/internal/entity"
+	"taskservice/internal/entity"
 )
 
-func (repository *Repository) AddUserToTeam(ctx context.Context, req *entity.TeamMember) error {
+func (r *Repository) AddUserToTeam(ctx context.Context, req *entity.TeamMember) error {
 	const op = "TeamRepository.AddUserToTeam"
 
 	query := `
 		INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, $3)
 	`
 
-	result, err := repository.db.ExecContext(ctx, query, req.TeamID, req.UserID, req.Role)
+	result, err := r.db.ExecContext(ctx, query, req.TeamID, req.UserID, req.Role)
 
 	if err != nil {
 		return err
@@ -21,12 +21,12 @@ func (repository *Repository) AddUserToTeam(ctx context.Context, req *entity.Tea
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return err
 	}
 
 	if rowsAffected == 0 {
-		repository.log.Warn(op, "User already added to team or insertion skipped")
+		r.log.Warn(op, "User already added to team or insertion skipped")
 		return fmt.Errorf("user already added to team or insertion skipped")
 	}
 

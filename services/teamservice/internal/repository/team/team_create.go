@@ -2,10 +2,10 @@ package team
 
 import (
 	"context"
-	"userservice/internal/entity"
+	"taskservice/internal/entity"
 )
 
-func (repository *Repository) CreateTeam(ctx context.Context, team *entity.Team) (*entity.Team, error) {
+func (r *Repository) CreateTeam(ctx context.Context, team *entity.Team) (*entity.Team, error) {
 	const op = "TeamRepository.CreateTeam"
 
 	query := `
@@ -13,10 +13,10 @@ func (repository *Repository) CreateTeam(ctx context.Context, team *entity.Team)
 		RETURNING id, name, description, created_at, updated_at
 	`
 
-	row := repository.db.QueryRowContext(ctx, query, team.Name, team.Description)
+	row := r.db.QueryRowContext(ctx, query, team.Name, team.Description)
 
 	if err := row.Err(); err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return nil, err
 	}
 
@@ -29,7 +29,7 @@ func (repository *Repository) CreateTeam(ctx context.Context, team *entity.Team)
 	)
 
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return nil, err
 	}
 

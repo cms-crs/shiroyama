@@ -3,10 +3,10 @@ package team
 import (
 	"context"
 	"fmt"
-	"userservice/internal/dto"
+	"taskservice/internal/dto"
 )
 
-func (repository *Repository) UpdateUserRole(ctx context.Context, req *dto.UpdateUserRoleRequest) error {
+func (r *Repository) UpdateUserRole(ctx context.Context, req *dto.UpdateUserRoleRequest) error {
 	const op = "TeamRepository.UpdateUserRole"
 
 	query := `
@@ -15,9 +15,9 @@ func (repository *Repository) UpdateUserRole(ctx context.Context, req *dto.Updat
 		WHERE user_id = $2
 	`
 
-	result, err := repository.db.ExecContext(ctx, query, req.Role, req.UserID)
+	result, err := r.db.ExecContext(ctx, query, req.Role, req.UserID)
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return fmt.Errorf("failed to remove user from team")
 	}
 

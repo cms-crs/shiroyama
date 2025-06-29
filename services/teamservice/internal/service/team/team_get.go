@@ -2,7 +2,7 @@ package team
 
 import (
 	"context"
-	"userservice/internal/dto"
+	"taskservice/internal/dto"
 )
 
 func (service *Service) GetTeam(

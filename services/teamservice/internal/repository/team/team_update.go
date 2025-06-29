@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"userservice/internal/entity"
+	"taskservice/internal/entity"
 )
 
-func (repository *Repository) UpdateTeam(ctx context.Context, team *entity.Team) (*entity.Team, error) {
+func (r *Repository) UpdateTeam(ctx context.Context, team *entity.Team) (*entity.Team, error) {
 	const op = "TeamRepository.UpdateTeam"
 
 	var setClauses []string
@@ -39,7 +39,7 @@ func (repository *Repository) UpdateTeam(ctx context.Context, team *entity.Team)
 
 	args = append(args, team.ID)
 
-	row := repository.db.QueryRowContext(ctx, query, args...)
+	row := r.db.QueryRowContext(ctx, query, args...)
 
 	var updated entity.Team
 	err := row.Scan(
@@ -51,7 +51,7 @@ func (repository *Repository) UpdateTeam(ctx context.Context, team *entity.Team)
 	)
 
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return nil, fmt.Errorf("failed to update team")
 	}
 

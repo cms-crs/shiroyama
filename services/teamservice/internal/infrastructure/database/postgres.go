@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"userservice/internal/config"
+	"taskservice/internal/config"
 )
 
 func NewPostgresDB(cfg *config.Config) (*sql.DB, error) {

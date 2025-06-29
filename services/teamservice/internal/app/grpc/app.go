@@ -6,21 +6,23 @@ import (
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"
-	"userservice/internal/clients"
-	"userservice/internal/config"
-	"userservice/internal/handler"
-	teamRepo "userservice/internal/repository/team"
-	teamService "userservice/internal/service/team"
+	"taskservice/internal/clients"
+	"taskservice/internal/config"
+	"taskservice/internal/handler"
+	"taskservice/internal/kafka"
+	teamRepo "taskservice/internal/repository/team"
+	teamService "taskservice/internal/service/team"
 )
 
 type App struct {
-	log  *slog.Logger
-	gRPC *grpc.Server
-	port int
-	db   *sql.DB
+	log           *slog.Logger
+	gRPC          *grpc.Server
+	port          int
+	db            *sql.DB
+	kafkaProducer *kafka.Producer
 }
 
-func New(log *slog.Logger, port int, db *sql.DB, cfg *config.Config) *App {
+func New(log *slog.Logger, port int, db *sql.DB, cfg *config.Config, kafkaProducer *kafka.Producer) *App {
 	gRPCServer := grpc.NewServer()
 
 	userClient, err := clients.NewUserClient(cfg.UserService.Address)
@@ -28,16 +30,18 @@ func New(log *slog.Logger, port int, db *sql.DB, cfg *config.Config) *App {
 		log.Error(err.Error())
 		panic(err.Error())
 	}
+
 	repository := teamRepo.NewTeamRepository(log, db)
 	service := teamService.NewTeamService(log, repository, userClient)
 
-	handler.Register(gRPCServer, log, service)
+	handler.Register(gRPCServer, log, service, kafkaProducer)
 
 	return &App{
-		log:  log,
-		gRPC: gRPCServer,
-		port: port,
-		db:   db,
+		log:           log,
+		gRPC:          gRPCServer,
+		port:          port,
+		db:            db,
+		kafkaProducer: kafkaProducer,
 	}
 }
 
@@ -60,7 +64,7 @@ func (app *App) Run() error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	log.Info("Starting gRPC server", listener.Addr().String())
+	log.Info("Starting gRPC server", slog.String("addr", listener.Addr().String()))
 
 	if err := app.gRPC.Serve(listener); err != nil {
 		return fmt.Errorf("%s: %w", op, err)

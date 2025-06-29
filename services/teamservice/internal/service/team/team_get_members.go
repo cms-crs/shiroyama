@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	userv1 "github.com/cms-crs/protos/gen/go/user_service"
-	"userservice/internal/dto"
+	"taskservice/internal/dto"
 )
 
 func (service *Service) GetTeamMembers(ctx context.Context, ID string) ([]*dto.TeamMember, error) {

@@ -3,9 +3,10 @@ package team
 import (
 	"context"
 	"log/slog"
-	"userservice/internal/clients"
-	"userservice/internal/dto"
-	"userservice/internal/entity"
+	"taskservice/internal/clients"
+	"taskservice/internal/dto"
+	"taskservice/internal/entity"
+	"taskservice/internal/kafka"
 )
 
 type Repository interface {
@@ -45,6 +46,19 @@ type Repository interface {
 		ctx context.Context,
 		ID string,
 	) ([]*entity.TeamMember, error)
+	DeleteUserFromAllTeams(
+		ctx context.Context,
+		userID string,
+	) (*kafka.TeamDeletionData, error)
+	RestoreUserTeams(
+		ctx context.Context,
+		userID string,
+		data *kafka.TeamDeletionData,
+	) error
+	GetUserTeamMemberships(
+		ctx context.Context,
+		userID string,
+	) (*kafka.TeamDeletionData, error)
 }
 
 type Service struct {
