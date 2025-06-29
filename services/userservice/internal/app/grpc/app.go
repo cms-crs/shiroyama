@@ -6,7 +6,9 @@ import (
 	"google.golang.org/grpc"
 	"log/slog"
 	"net"
+	"userservice/internal/config"
 	"userservice/internal/handler"
+	"userservice/internal/kafka"
 	userRepo "userservice/internal/repository/user"
 	userService "userservice/internal/service/user"
 )
@@ -18,13 +20,18 @@ type App struct {
 	db   *sql.DB
 }
 
-func New(log *slog.Logger, port int, db *sql.DB) *App {
+func New(log *slog.Logger, port int, db *sql.DB, cfg *config.Config) *App {
 	gRPCServer := grpc.NewServer()
 
 	userRepository := userRepo.NewUserRepository(log, db)
-	userService := userService.NewUserService(log, userRepository)
+	service := userService.NewUserService(log, userRepository)
+	kafkaProducer, err := kafka.NewKafkaProducer(cfg.Kafka.Brokers)
+	if err != nil {
+		log.Error("Failed to create kafka producer", "error", err)
+		panic(err)
+	}
 
-	handler.Register(gRPCServer, log, userService)
+	handler.Register(gRPCServer, log, service, kafkaProducer)
 
 	return &App{
 		log:  log,

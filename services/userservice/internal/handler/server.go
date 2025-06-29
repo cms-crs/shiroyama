@@ -3,13 +3,17 @@ package handler
 import (
 	"context"
 	"github.com/cms-crs/protos/gen/go/user_service"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"log"
 	"log/slog"
+	"time"
 	"userservice/internal/dto"
+	"userservice/internal/kafka"
 )
 
 type UserService interface {
@@ -29,22 +33,20 @@ type UserService interface {
 		context.Context,
 		*dto.UpdateUserRequest,
 	) (*dto.UpdateUserResponse, error)
-	DeleteUser(
-		context.Context,
-		string,
-	) error
 }
 
 type GrpcHandler struct {
 	userv1.UnimplementedUserServiceServer
-	log         *slog.Logger
-	userService UserService
+	log           *slog.Logger
+	userService   UserService
+	kafkaProducer *kafka.Producer
 }
 
-func Register(gRPC *grpc.Server, log *slog.Logger, userService UserService) {
+func Register(gRPC *grpc.Server, log *slog.Logger, userService UserService, kafkaProducer *kafka.Producer) {
 	userv1.RegisterUserServiceServer(gRPC, GrpcHandler{
-		log:         log,
-		userService: userService,
+		log:           log,
+		userService:   userService,
+		kafkaProducer: kafkaProducer,
 	})
 }
 
@@ -159,14 +161,31 @@ func (handler GrpcHandler) UpdateUser(ctx context.Context, req *userv1.UpdateUse
 	}, nil
 }
 
-func (handler GrpcHandler) DeleteUser(ctx context.Context, request *userv1.DeleteUserRequest) (*emptypb.Empty, error) {
-	const op = "gRPC.DeleteUser"
-
-	err := handler.userService.DeleteUser(ctx, request.Id)
+func (handler GrpcHandler) DeleteUser(ctx context.Context, req *userv1.DeleteUserRequest) (*emptypb.Empty, error) {
+	getUserRequest := &dto.GetUserRequest{ID: req.Id}
+	user, err := handler.userService.GetUser(ctx, getUserRequest)
 	if err != nil {
-		handler.log.Error(op, err.Error())
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
 	}
 
+	sagaID := uuid.New().String()
+	event := kafka.Event{
+		ID:        uuid.New().String(),
+		Type:      kafka.UserDeletionRequested,
+		UserID:    req.Id,
+		Timestamp: time.Now(),
+		SagaID:    sagaID,
+		Data: map[string]interface{}{
+			"user_email":    user.Email,
+			"user_username": user.Username,
+			"initiated_by":  "grpc_request",
+		},
+	}
+
+	if err := handler.kafkaProducer.PublishEvent("user-deletion-saga", event); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to initiate user deletion: %v", err)
+	}
+
+	log.Printf("User deletion saga initiated for user %s (saga: %s)", req.Id, sagaID)
 	return &emptypb.Empty{}, nil
 }

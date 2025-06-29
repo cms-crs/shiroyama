@@ -27,7 +27,7 @@ func (repository *Repository) CreateUser(ctx context.Context, user *entity.User)
 	)
 
 	if err != nil {
-		repository.Log.Error(op, err.Error())
+		repository.log.Error(op, err.Error())
 		return nil, err
 	}
 

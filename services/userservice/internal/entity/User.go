@@ -8,4 +8,5 @@ type User struct {
 	Username  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	IsDeleted bool
 }

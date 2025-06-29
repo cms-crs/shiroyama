@@ -28,7 +28,7 @@ func (repository *Repository) UpdateUser(ctx context.Context, user *entity.User)
 	)
 
 	if err != nil {
-		repository.Log.Error(op)
+		repository.log.Error(op)
 		return nil, err
 	}
 

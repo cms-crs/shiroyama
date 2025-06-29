@@ -23,10 +23,6 @@ type Repository interface {
 		ctx context.Context,
 		req *entity.User,
 	) (*entity.User, error)
-	DeleteUser(
-		ctx context.Context,
-		ID string,
-	) error
 }
 
 type Service struct {
