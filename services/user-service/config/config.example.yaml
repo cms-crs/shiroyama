@@ -1,13 +1,25 @@
 env: "local"
+
 grpc:
   port: 44044
   timeout: 10h
+
 db:
   host: postgres
   port: 3306
   user: user
-  name: postgres
+  name: user
   password: password
   max_open_connections: 10
   max_idle_connections: 5
   max_lifetime: 60
+
+kafka:
+  brokers:
+    - kafka:29092
+
+  producer:
+    retryMax: 5
+    flushTimeout: 500ms
+    batchSize: 100
+    compression: snappy

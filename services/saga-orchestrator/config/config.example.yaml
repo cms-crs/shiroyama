@@ -1,0 +1,34 @@
+env: dev
+
+http-port: 44047
+
+metrics-port: 9090
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+  db: 0
+
+kafka:
+  brokers:
+    - kafka:29092
+
+  producer:
+    retryMax: 5
+    flushTimeout: 500ms
+    batchSize: 100
+    compression: snappy
+
+  consumer:
+    groupID: saga-orchestrator-group
+    sessionTimeout: 10000ms
+    heartbeatInterval: 3s
+    autoOffsetReset: latest
+    maxProcessingTime: 5s
+
+saga:
+  timeout: 1m
+  retryInterval: 10s
+  maxRetries: 3
+  cleanupInterval: 10m

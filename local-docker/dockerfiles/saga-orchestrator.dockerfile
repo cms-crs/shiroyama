@@ -18,6 +18,6 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/saga-orchestrator .
 COPY --from=builder /app/config ./config
 
-EXPOSE 44044
+EXPOSE 44047
 
 CMD ["./saga-orchestrator"]
