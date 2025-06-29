@@ -2,13 +2,14 @@ package list
 
 import (
 	"context"
-	"fmt"
 	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"log/slog"
 )
 
 func (service *Service) CreateList(ctx context.Context, req *boardv1.CreateListRequest) (*boardv1.List, error) {
-	const op = "listService.CreateList"
+	const op = "ListService.CreateList"
 
 	log := service.log.With(
 		slog.String("op", op),
@@ -16,21 +17,28 @@ func (service *Service) CreateList(ctx context.Context, req *boardv1.CreateListR
 		slog.String("name", req.Name),
 	)
 
+	if req.BoardId == "" {
+		log.Warn("Board ID is required")
+		return nil, status.Error(codes.InvalidArgument, "board_id is required")
+	}
+
+	if req.Name == "" {
+		log.Warn("List name is required")
+		return nil, status.Error(codes.InvalidArgument, "list name is required")
+	}
+
+	_, err := service.boardRepo.GetBoard(ctx, req.BoardId)
+	if err != nil {
+		log.Error("Board not found", "board_id", req.BoardId, "error", err)
+		return nil, status.Error(codes.InvalidArgument, "board not found")
+	}
+
 	log.Info("Creating list")
 
-	if req.BoardId == "" {
-		log.Warn("Board ID is empty")
-		return nil, fmt.Errorf("board ID is required")
-	}
-	if req.Name == "" {
-		log.Warn("List name is empty")
-		return nil, fmt.Errorf("list name is required")
-	}
-
-	list, err := service.repo.CreateList(ctx, req)
+	list, err := service.listRepo.CreateList(ctx, req)
 	if err != nil {
 		log.Error("Failed to create list", "error", err)
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return nil, status.Error(codes.Internal, "failed to create list")
 	}
 
 	log.Info("List created successfully", "list_id", list.Id)

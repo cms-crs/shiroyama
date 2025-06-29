@@ -2,11 +2,10 @@ package handler
 
 import (
 	"context"
-	"log/slog"
-
 	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"log/slog"
 )
 
 type BoardService interface {
@@ -14,6 +13,7 @@ type BoardService interface {
 	GetBoard(ctx context.Context, boardID string) (*boardv1.Board, error)
 	GetBoardWithLists(ctx context.Context, boardID string) (*boardv1.BoardWithLists, error)
 	UpdateBoard(ctx context.Context, req *boardv1.UpdateBoardRequest) (*boardv1.Board, error)
+	DeleteBoard(ctx context.Context, boardID string) error
 	GetUserBoards(ctx context.Context, userID string) ([]*boardv1.Board, error)
 	GetTeamBoards(ctx context.Context, teamID string) ([]*boardv1.Board, error)
 }
@@ -47,6 +47,8 @@ func (h *Handler) CreateBoard(ctx context.Context, req *boardv1.CreateBoardReque
 	log := h.log.With(
 		slog.String("op", op),
 		slog.String("name", req.Name),
+		slog.String("team_id", req.TeamId),
+		slog.String("created_by", req.CreatedBy),
 	)
 
 	log.Info("Create board request received")
@@ -89,6 +91,7 @@ func (h *Handler) UpdateBoard(ctx context.Context, req *boardv1.UpdateBoardReque
 	log := h.log.With(
 		slog.String("op", op),
 		slog.String("board_id", req.Id),
+		slog.String("name", req.Name),
 	)
 
 	log.Info("Update board request received")
@@ -102,6 +105,27 @@ func (h *Handler) UpdateBoard(ctx context.Context, req *boardv1.UpdateBoardReque
 	log.Info("Board updated successfully")
 
 	return board, nil
+}
+
+func (h *Handler) DeleteBoard(ctx context.Context, req *boardv1.DeleteBoardRequest) (*emptypb.Empty, error) {
+	const op = "handler.DeleteBoard"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("board_id", req.Id),
+	)
+
+	log.Info("Delete board request received")
+
+	err := h.boardService.DeleteBoard(ctx, req.Id)
+	if err != nil {
+		log.Error("Failed to delete board", "error", err)
+		return nil, err
+	}
+
+	log.Info("Board deleted successfully")
+
+	return &emptypb.Empty{}, nil
 }
 
 func (h *Handler) GetUserBoards(ctx context.Context, req *boardv1.GetUserBoardsRequest) (*boardv1.GetUserBoardsResponse, error) {
@@ -178,6 +202,7 @@ func (h *Handler) UpdateList(ctx context.Context, req *boardv1.UpdateListRequest
 	log := h.log.With(
 		slog.String("op", op),
 		slog.String("list_id", req.Id),
+		slog.String("name", req.Name),
 	)
 
 	log.Info("Update list request received")
@@ -193,12 +218,34 @@ func (h *Handler) UpdateList(ctx context.Context, req *boardv1.UpdateListRequest
 	return list, nil
 }
 
+func (h *Handler) DeleteList(ctx context.Context, req *boardv1.DeleteListRequest) (*emptypb.Empty, error) {
+	const op = "handler.DeleteList"
+
+	log := h.log.With(
+		slog.String("op", op),
+		slog.String("list_id", req.Id),
+	)
+
+	log.Info("Delete list request received")
+
+	err := h.listService.DeleteList(ctx, req.Id)
+	if err != nil {
+		log.Error("Failed to delete list", "error", err)
+		return nil, err
+	}
+
+	log.Info("List deleted successfully")
+
+	return &emptypb.Empty{}, nil
+}
+
 func (h *Handler) ReorderLists(ctx context.Context, req *boardv1.ReorderListsRequest) (*emptypb.Empty, error) {
 	const op = "handler.ReorderLists"
 
 	log := h.log.With(
 		slog.String("op", op),
 		slog.String("board_id", req.BoardId),
+		slog.Int("positions_count", len(req.Positions)),
 	)
 
 	log.Info("Reorder lists request received")

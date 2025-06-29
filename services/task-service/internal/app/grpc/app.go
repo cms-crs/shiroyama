@@ -6,8 +6,10 @@ import (
 	"gorm.io/gorm"
 	"log/slog"
 	"net"
-	postgresrepo "taskservice/internal/adapter/postgresrepo/task"
-	"taskservice/internal/handler/grpc/taskservice"
+	"taskservice/internal/clients"
+	"taskservice/internal/config"
+	handler "taskservice/internal/handler/grpc/taskservice"
+	postgresrepo "taskservice/internal/repository"
 	service "taskservice/internal/service/task"
 )
 
@@ -18,12 +20,22 @@ type App struct {
 	db   *gorm.DB
 }
 
-func New(log *slog.Logger, port int, db *gorm.DB) *App {
+func New(log *slog.Logger, port int, db *gorm.DB, cfg *config.Config) *App {
 	gRPCServer := grpc.NewServer()
-	taskRepo := postgresrepo.NewTaskRepository(db)
-	taskService := service.NewTaskService(taskRepo)
+	serviceClients, err := clients.NewServiceClients(&clients.ClientConfig{
+		UserServiceAddr:  cfg.Clients.BoardServiceAddr,
+		BoardServiceAddr: cfg.Clients.TeamServiceAddr,
+		DialTimeout:      cfg.Clients.DialTimeout,
+	})
 
-	taskservicegrpc.Register(gRPCServer, taskService, log)
+	if err != nil {
+		panic(err)
+	}
+
+	taskRepo := postgresrepo.NewTaskRepository(db)
+	taskService := service.NewTaskService(log, taskRepo, serviceClients.UserClient, serviceClients.BoardClient)
+
+	handler.Register(gRPCServer, log, taskService)
 
 	return &App{
 		log:  log,

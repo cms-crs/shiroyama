@@ -1,6 +1,7 @@
 package grpcapp
 
 import (
+	"boardservice/internal/clients"
 	"boardservice/internal/config"
 	"boardservice/internal/handler"
 	boardRepo "boardservice/internal/repository/board"
@@ -26,9 +27,19 @@ func New(log *slog.Logger, port int, db *sql.DB, cfg *config.Config) *App {
 
 	boardRepository := boardRepo.NewRepository(db)
 	listRepository := listRepo.NewRepository(db)
+	serviceClients, err := clients.NewServiceClients(&clients.ClientConfig{
+		UserServiceAddr: cfg.Clients.UserServiceAddr,
+		TeamServiceAddr: cfg.Clients.TeamServiceAddr,
+		DialTimeout:     cfg.Clients.ClientTimeout,
+	})
 
-	boardSvc := boardService.NewBoardService(log, boardRepository)
-	listSvc := listService.NewListService(log, listRepository)
+	if err != nil {
+		log.Error("failed to initialize service clients", "error", err)
+	}
+	defer serviceClients.Close()
+
+	boardSvc := boardService.NewBoardService(log, boardRepository, serviceClients.UserClient, serviceClients.TeamClient)
+	listSvc := listService.NewListService(log, listRepository, boardRepository)
 
 	handler.Register(gRPCServer, log, boardSvc, listSvc)
 

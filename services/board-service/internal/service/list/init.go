@@ -2,8 +2,9 @@ package list
 
 import (
 	"context"
-	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
 	"log/slog"
+
+	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
 )
 
 type Repository interface {
@@ -14,14 +15,20 @@ type Repository interface {
 	ReorderLists(ctx context.Context, req *boardv1.ReorderListsRequest) error
 }
 
-type Service struct {
-	log  *slog.Logger
-	repo Repository
+type BoardRepository interface {
+	GetBoard(ctx context.Context, boardID string) (*boardv1.Board, error)
 }
 
-func NewListService(log *slog.Logger, repo Repository) *Service {
+type Service struct {
+	log       *slog.Logger
+	listRepo  Repository
+	boardRepo BoardRepository
+}
+
+func NewListService(log *slog.Logger, listRepo Repository, boardRepo BoardRepository) *Service {
 	return &Service{
-		log:  log,
-		repo: repo,
+		log:       log,
+		listRepo:  listRepo,
+		boardRepo: boardRepo,
 	}
 }
