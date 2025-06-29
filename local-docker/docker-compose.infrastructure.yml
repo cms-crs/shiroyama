@@ -1,4 +1,62 @@
 services:
+  api-gateway:
+    build:
+      context: ../services/api-gateway
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9090
+      - ENVIRONMENT=production
+      - READ_TIMEOUT=30
+      - WRITE_TIMEOUT=30
+      - IDLE_TIMEOUT=120
+
+      - ALLOWED_ORIGINS=*
+      - ALLOWED_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS
+      - ALLOWED_HEADERS=Accept,Authorization,Content-Type,X-CSRF-Token
+
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - ACCESS_TOKEN_DURATION=3600
+      - REFRESH_TOKEN_DURATION=604800
+
+      - AUTH_SERVICE_URL=auth-service:44046
+      - USER_SERVICE_URL=user-service:44044
+      - TEAM_SERVICE_URL=team-service:44045
+
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+
+      - KAFKA_BROKERS=kafka-host:29092
+      - KAFKA_CLIENT_ID=api-gateway
+
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_RPS=100
+
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
   postgres:
     image: postgres:latest
     container_name: postgres-db
