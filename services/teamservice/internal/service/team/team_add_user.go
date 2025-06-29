@@ -3,8 +3,8 @@ package team
 import (
 	"context"
 	"fmt"
-	"userservice/internal/dto"
-	"userservice/internal/entity"
+	"taskservice/internal/dto"
+	"taskservice/internal/entity"
 )
 
 func (service *Service) AddUserToTeam(

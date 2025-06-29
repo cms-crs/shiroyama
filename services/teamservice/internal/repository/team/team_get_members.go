@@ -3,18 +3,18 @@ package team
 import (
 	"context"
 	"fmt"
-	"userservice/internal/entity"
+	"taskservice/internal/entity"
 )
 
-func (repository *Repository) GetTeamMembers(ctx context.Context, ID string) ([]*entity.TeamMember, error) {
+func (r *Repository) GetTeamMembers(ctx context.Context, ID string) ([]*entity.TeamMember, error) {
 	const op = "TeamRepository.GetTeamMembers"
 
 	query := `SELECT * FROM team_members WHERE team_id=$1`
 
-	rows, err := repository.db.QueryContext(ctx, query, ID)
+	rows, err := r.db.QueryContext(ctx, query, ID)
 
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return nil, fmt.Errorf("failed to get team members")
 	}
 
@@ -32,7 +32,7 @@ func (repository *Repository) GetTeamMembers(ctx context.Context, ID string) ([]
 		teamMembers = append(teamMembers, &teamMember)
 
 		if err != nil {
-			repository.log.Error(op, err)
+			r.log.Error(op, err)
 			return nil, fmt.Errorf("failed to get team members")
 		}
 	}

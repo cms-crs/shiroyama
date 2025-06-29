@@ -25,10 +25,11 @@ func (repository *Repository) GetUser(ctx context.Context, id string) (*entity.U
 		&user.Email,
 		&user.UpdatedAt,
 		&user.CreatedAt,
+		&user.IsDeleted,
 	)
 
 	if err != nil {
-		repository.Log.Error(op, err.Error())
+		repository.log.Error(op, err.Error())
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("user not found")
 		}

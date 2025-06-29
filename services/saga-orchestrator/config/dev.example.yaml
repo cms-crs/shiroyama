@@ -1,0 +1,16 @@
+env:
+grpc:
+  port:
+  timeout:
+db:
+  host:
+  user:
+  name:
+  password:
+  max_open_connections:
+  max_idle_connections:
+  max_lifetime:
+redis:
+  port: 44044
+  host: localhost
+  ttl: 24h

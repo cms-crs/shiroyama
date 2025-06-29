@@ -1,8 +1,8 @@
 package dto
 
 import (
+	"taskservice/internal/entity"
 	"time"
-	"userservice/internal/entity"
 )
 
 type TeamMember struct {

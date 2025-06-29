@@ -2,10 +2,8 @@
 
 set -e
 
-COMPOSE_FILES="-f docker-compose.infrastructure.yml \
-               -f docker-compose.services.yml"
+INFRA_COMPOSE="docker-compose.infrastructure.yml"
+SERVICES_COMPOSE="docker-compose.services.yml"
 
-echo "🔧 Запуск docker-compose up --watch..."
-
-docker-compose $COMPOSE_FILES build
-docker-compose $COMPOSE_FILES up --watch
+echo "Инфраструктура готова. Запускаем сервисы..."
+docker compose -f "$INFRA_COMPOSE" -f "$SERVICES_COMPOSE" up --build --watch

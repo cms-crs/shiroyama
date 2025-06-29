@@ -40,4 +40,5 @@ type User struct {
 	RefreshToken string
 	Role         role `gorm:"type:user_role;default:'Regular';not null"`
 	UserID       string `gorm:"unique"`
+	IsDeleted    bool
 }

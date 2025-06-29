@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -8,6 +9,7 @@ import (
 	"userservice/internal/app"
 	"userservice/internal/config"
 	"userservice/internal/infrastructure/database"
+	"userservice/internal/kafka"
 )
 
 const (
@@ -24,19 +26,36 @@ func main() {
 	db := database.MustLoad(cfg)
 
 	log.Info("Starting application", slog.Any("config", cfg))
-	application := app.New(log, cfg.Grpc.Port, db)
+	application := app.New(log, cfg.Grpc.Port, db, cfg)
 	go application.GRPCServer.MustRun()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	consumer, err := kafka.NewConsumer(ctx, cfg, log, db)
+	if err != nil {
+		log.Error("Failed to create Kafka consumer", "error", err)
+		return
+	}
+
+	go func() {
+		if err := consumer.Start(ctx, []string{"user-deletion-saga"}); err != nil {
+			log.Error("Kafka consumer stopped with error", "error", err)
+			cancel()
+		}
+	}()
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-	sign := <-signalChan
+	select {
+	case sign := <-signalChan:
+		log.Info("Stopping application", slog.String("signal", sign.String()))
+	case <-ctx.Done():
+	}
 
-	log.Info("Stopping application", slog.String("signal", sign.String()))
-
+	cancel()
 	application.GRPCServer.Stop()
 
 	log.Info("Application stopped")
-
 }
 
 func setupLogger(env string) *slog.Logger {

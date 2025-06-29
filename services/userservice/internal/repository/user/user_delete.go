@@ -2,28 +2,22 @@ package user
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 )
 
-func (repository *Repository) DeleteUser(ctx context.Context, ID string) error {
-	const op = "userRepository.DeleteUser"
-
-	query := `DELETE FROM users WHERE id = $1`
-
-	result, err := repository.db.ExecContext(ctx, query, ID)
+func (repository *Repository) SoftDeleteUserTx(ctx context.Context, tx *sql.Tx, userID string) error {
+	query := `UPDATE users SET is_deleted = TRUE WHERE id = $1`
+	result, err := tx.ExecContext(ctx, query, userID)
 	if err != nil {
-		repository.Log.Error(op, err.Error())
+		repository.log.Error("Failed to soft delete user", "user_id", userID, "error", err)
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		repository.Log.Error(op, err.Error())
-		return err
-	}
-
+	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
+		repository.log.Warn("No user found to soft delete", "user_id", userID)
+	} else {
+		repository.log.Info("User soft deleted successfully", "user_id", userID)
 	}
 
 	return nil

@@ -5,7 +5,8 @@ import (
 	"authservice/src/config"
 	"authservice/src/database/postgres"
 	"authservice/src/database/redis"
-	"github.com/joho/godotenv"
+	"authservice/src/kafka"
+	"context"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -14,11 +15,6 @@ import (
 
 func main() {
 	// load env to get secret key
-	err := godotenv.Load(".env")
-	if err != nil {
-		panic("Error loading .env file")
-	}
-	
 	cfg := config.MustLoad()
 
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -29,11 +25,30 @@ func main() {
 	application := app.New(db, rdb, cfg, log)
 	go application.MustRun()
 
+	ctx, cancel := context.WithCancel(context.Background())
+
+	consumer, err := kafka.NewConsumer(ctx, cfg, log, rdb, db)
+	if err != nil {
+		log.Error("Failed to create Kafka consumer", "error", err)
+		return
+	}
+
+	go func() {
+		if err := consumer.Start(ctx, []string{"user-deletion-saga"}); err != nil {
+			log.Error("Kafka consumer stopped with error", "error", err)
+			cancel()
+		}
+	}()
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-	sign := <-signalChan
+	select {
+	case sign := <-signalChan:
+		log.Info("Stopping application", slog.String("signal", sign.String()))
+	case <-ctx.Done():
+	}
 
-	log.Info("Stopping application", slog.String("signal", sign.String()))
+	cancel()
 
 	application.Stop()
 

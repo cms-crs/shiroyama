@@ -11,7 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
-	"userservice/internal/dto"
+	"taskservice/internal/dto"
+	"taskservice/internal/kafka"
 )
 
 type TeamService interface {
@@ -55,14 +56,16 @@ type TeamService interface {
 
 type GrpcHandler struct {
 	teamv1.UnimplementedTeamServiceServer
-	log         *slog.Logger
-	teamService TeamService
+	log           *slog.Logger
+	teamService   TeamService
+	kafkaProducer *kafka.Producer
 }
 
-func Register(gRPC *grpc.Server, log *slog.Logger, teamService TeamService) {
+func Register(gRPC *grpc.Server, log *slog.Logger, teamService TeamService, kafkaProducer *kafka.Producer) {
 	teamv1.RegisterTeamServiceServer(gRPC, &GrpcHandler{
-		log:         log,
-		teamService: teamService,
+		log:           log,
+		teamService:   teamService,
+		kafkaProducer: kafkaProducer,
 	})
 }
 

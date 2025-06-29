@@ -3,10 +3,10 @@ package team
 import (
 	"context"
 	"database/sql"
-	"userservice/internal/entity"
+	"taskservice/internal/entity"
 )
 
-func (repository *Repository) GetUserTeams(ctx context.Context, UserID string) ([]*entity.Team, error) {
+func (r *Repository) GetUserTeams(ctx context.Context, UserID string) ([]*entity.Team, error) {
 	const op = "TeamRepository.GetUserTeams"
 
 	query := `
@@ -16,15 +16,15 @@ func (repository *Repository) GetUserTeams(ctx context.Context, UserID string) (
 		WHERE tm.user_id = $1
 	`
 
-	rows, err := repository.db.QueryContext(ctx, query, UserID)
+	rows, err := r.db.QueryContext(ctx, query, UserID)
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return nil, err
 	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-			repository.log.Error(op, err)
+			r.log.Error(op, err)
 		}
 	}(rows)
 
@@ -41,7 +41,7 @@ func (repository *Repository) GetUserTeams(ctx context.Context, UserID string) (
 		)
 
 		if err != nil {
-			repository.log.Error(op, err)
+			r.log.Error(op, err)
 			return nil, err
 		}
 
@@ -49,7 +49,7 @@ func (repository *Repository) GetUserTeams(ctx context.Context, UserID string) (
 	}
 
 	if rows.Err() != nil {
-		repository.log.Error(op, rows.Err())
+		r.log.Error(op, rows.Err())
 		return nil, err
 	}
 

@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"userservice/internal/config"
+	"taskservice/internal/config"
 )
 
 func MustLoad(cfg *config.Config) *sql.DB {

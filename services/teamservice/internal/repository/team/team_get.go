@@ -2,10 +2,10 @@ package team
 
 import (
 	"context"
-	"userservice/internal/entity"
+	"taskservice/internal/entity"
 )
 
-func (repository *Repository) GetTeam(ctx context.Context, ID string) (*entity.Team, error) {
+func (r *Repository) GetTeam(ctx context.Context, ID string) (*entity.Team, error) {
 	const op = "repository.GetTeam"
 
 	query := `
@@ -15,10 +15,10 @@ func (repository *Repository) GetTeam(ctx context.Context, ID string) (*entity.T
 
 	var team entity.Team
 
-	row := repository.db.QueryRowContext(ctx, query, ID)
+	row := r.db.QueryRowContext(ctx, query, ID)
 
 	if err := row.Err(); err != nil {
-		repository.log.Error(op, row.Err().Error())
+		r.log.Error(op, row.Err().Error())
 		return nil, err
 	}
 
@@ -31,7 +31,7 @@ func (repository *Repository) GetTeam(ctx context.Context, ID string) (*entity.T
 	)
 
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return nil, err
 	}
 

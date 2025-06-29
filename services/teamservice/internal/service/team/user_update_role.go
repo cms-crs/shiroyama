@@ -3,7 +3,7 @@ package team
 import (
 	"context"
 	"fmt"
-	"userservice/internal/dto"
+	"taskservice/internal/dto"
 )
 
 func (service *Service) UpdateUserRole(

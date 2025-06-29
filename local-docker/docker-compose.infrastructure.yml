@@ -1,4 +1,62 @@
 services:
+  api-gateway:
+    build:
+      context: ../services/api-gateway
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      - PORT=8080
+      - METRICS_PORT=9090
+      - ENVIRONMENT=production
+      - READ_TIMEOUT=30
+      - WRITE_TIMEOUT=30
+      - IDLE_TIMEOUT=120
+
+      - ALLOWED_ORIGINS=*
+      - ALLOWED_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS
+      - ALLOWED_HEADERS=Accept,Authorization,Content-Type,X-CSRF-Token
+
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - ACCESS_TOKEN_DURATION=3600
+      - REFRESH_TOKEN_DURATION=604800
+
+      - AUTH_SERVICE_URL=auth-service:44046
+      - USER_SERVICE_URL=user-service:44044
+      - TEAM_SERVICE_URL=team-service:44045
+
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+
+      - KAFKA_BROKERS=kafka-host:29092
+      - KAFKA_CLIENT_ID=api-gateway
+
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_RPS=100
+
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
   postgres:
     image: postgres:latest
     container_name: postgres-db
@@ -13,61 +71,88 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
+    image: confluentinc/cp-zookeeper:7.3.2
     hostname: zookeeper
     container_name: zookeeper
-    ports:
-      - "2181:2181"
+    networks:
+      backend:
+        aliases:
+          - zookeeper-host
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
-    image: confluentinc/cp-kafka:7.4.0
+    image: confluentinc/cp-kafka:7.3.2
     hostname: kafka
     container_name: kafka
     depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-      - "9997:9997"
+      zookeeper:
+        condition: service_healthy
+    networks:
+      backend:
+        aliases:
+          - kafka-host
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper-host:2181"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-host:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_JMX_PORT: 9997
-      KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    depends_on:
-      - kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka-host:29092 --list || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     ports:
-      - "8080:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      - "9092:9092"
+      - "29092:29092"
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     container_name: redis
+    restart: unless-stopped
+    networks:
+      - backend
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
 networks:
   backend:
     name: backend
+
 volumes:
   postgres_data:
     driver: local
+  redis_data:
+    driver: local
+  zookeeper_data:
+  zookeeper_log:

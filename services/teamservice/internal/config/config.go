@@ -10,6 +10,7 @@ type Config struct {
 	Env         string         `yaml:"env" env-default:"local"`
 	Grpc        GRPCConfig     `yaml:"grpc"`
 	DB          DatabaseConfig `yaml:"db"`
+	Kafka       KafkaConfig    `yaml:"kafka"`
 	UserService UserService    `yaml:"userService"`
 }
 

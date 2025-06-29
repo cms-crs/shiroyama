@@ -16,7 +16,7 @@ func (repository *Repository) GetUsersByIds(ctx context.Context, IDs []string) (
 	rows, err := repository.db.QueryContext(ctx, query, pq.Array(IDs))
 
 	if err != nil {
-		repository.Log.Error(op, err.Error())
+		repository.log.Error(op, err.Error())
 		return nil, err
 	}
 
@@ -38,17 +38,17 @@ func (repository *Repository) GetUsersByIds(ctx context.Context, IDs []string) (
 	}
 
 	if closeErr := rows.Close(); closeErr != nil {
-		repository.Log.Error(op, closeErr.Error())
+		repository.log.Error(op, closeErr.Error())
 		return nil, closeErr
 	}
 
 	if err != nil {
-		repository.Log.Error(op, err.Error())
+		repository.log.Error(op, err.Error())
 		return nil, err
 	}
 
 	if err = rows.Err(); err != nil {
-		repository.Log.Error(op, err.Error())
+		repository.log.Error(op, err.Error())
 		return nil, err
 	}
 

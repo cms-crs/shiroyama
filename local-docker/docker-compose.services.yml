@@ -24,7 +24,10 @@ services:
       timeout: 3s
       retries: 3
     depends_on:
-      - postgres
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
   team-service:
     build:
       context: ../services/teamservice
@@ -50,7 +53,63 @@ services:
       timeout: 3s
       retries: 3
     depends_on:
-      - postgres
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+  auth-service:
+    build:
+      context: ../services/auth-service
+      dockerfile: ../../local-docker/dockerfiles/auth.dockerfile
+    networks:
+      - backend
+    env_file:
+      - .env
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/auth-service
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "44046:44046"
+    healthcheck:
+      test: [ "CMD", "grpc_health_probe", "-addr=localhost:44045" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+  saga-orchestrator:
+    build:
+      context: ../services/saga-orchestrator
+      dockerfile: ../../local-docker/dockerfiles/saga-orchestrator.dockerfile
+    networks:
+      - backend
+    env_file:
+      - .env
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/saga-orchestrator
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "44047:44047"
+    depends_on:
+      kafka:
+          condition: service_healthy
+      redis:
+        condition: service_healthy
 networks:
   backend:
     name: backend

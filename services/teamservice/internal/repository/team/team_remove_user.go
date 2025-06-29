@@ -3,17 +3,17 @@ package team
 import (
 	"context"
 	"fmt"
-	"userservice/internal/dto"
+	"taskservice/internal/dto"
 )
 
-func (repository *Repository) RemoveUserFromTeam(ctx context.Context, req *dto.RemoveUserFromTeamRequest) error {
+func (r *Repository) RemoveUserFromTeam(ctx context.Context, req *dto.RemoveUserFromTeamRequest) error {
 	const op = "TeamRepository.RemoveUserFromTeam"
 
 	query := "DELETE FROM team_members WHERE team_id = $1 AND user_id = $2"
 
-	result, err := repository.db.ExecContext(ctx, query, req.TeamID, req.UserID)
+	result, err := r.db.ExecContext(ctx, query, req.TeamID, req.UserID)
 	if err != nil {
-		repository.log.Error(op, err)
+		r.log.Error(op, err)
 		return fmt.Errorf("failted to remove user from team")
 	}
 
