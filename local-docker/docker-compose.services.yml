@@ -24,7 +24,10 @@ services:
       timeout: 3s
       retries: 3
     depends_on:
-      - postgres
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
   team-service:
     build:
       context: ../services/teamservice
