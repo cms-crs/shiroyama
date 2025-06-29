@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
 	"os"
 )
@@ -11,46 +12,34 @@ type Config struct {
 	Grpc     GRPCConfig     `yaml:"grpc"`
 	Redis    RedisConfig    `yaml:"redis"`
 	JWT      JWTConfig      `yaml:"jwt"`
+	Kafka    KafkaConfig    `yaml:"kafka"`
 }
 
 func MustLoad() *Config {
-	config, err := Load()
-
-	if err != nil {
-		panic(err)
-	}
-
-	return config
-}
-
-func Load() (*Config, error) {
-	path, err := fetchConfigPath()
-	if err != nil {
-		return nil, err
-	}
-
+	path := fetchConfigPath()
+	fmt.Println(path)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, err
+		panic("config file not found: " + path)
 	}
 
 	var config Config
 
 	if err := cleanenv.ReadConfig(path, &config); err != nil {
-		return nil, err
+		panic("error reading config file: " + err.Error())
 	}
 
-	return &config, nil
+	return &config
 }
 
-func fetchConfigPath() (string, error) {
+func fetchConfigPath() string {
 	var configPath string
 
 	flag.StringVar(&configPath, "config", "", "config file path")
 	flag.Parse()
 
 	if configPath == "" {
-		configPath = os.Getenv("CONFIG_PATH")
+		configPath = os.Getenv("AUTH_SERVICE_CONFIG_PATH")
 	}
 
-	return configPath, nil
+	return configPath
 }

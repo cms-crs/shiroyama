@@ -14,6 +14,7 @@ type AuthRepository struct {
 	db     *gorm.DB
 	rdb    *redis.Client
 	config *config.Config
+	log    *slog.Logger
 }
 
 func NewAuthRepository(db *gorm.DB, rdb *redis.Client, config *config.Config, log *slog.Logger) (*AuthRepository, error) {
@@ -30,6 +31,7 @@ func NewAuthRepository(db *gorm.DB, rdb *redis.Client, config *config.Config, lo
 		db:     db,
 		rdb:    rdb,
 		config: config,
+		log:    log,
 	}, nil
 }
 
@@ -52,7 +54,6 @@ func createRoleType(db *gorm.DB) error {
 }
 
 func (repo *AuthRepository) CreateUser(ctx context.Context, user model.User) (uint, error) {
-	// create user
 	if err := repo.db.WithContext(ctx).Create(&user).Error; err != nil {
 		return 0, err
 	}
@@ -98,6 +99,53 @@ func (repo *AuthRepository) UpdateRefreshToken(ctx context.Context, user *model.
 		return err
 	}
 	repo.rdb.Set(ctx, strconv.Itoa(int(user.ID)), token, repo.config.Redis.TTL)
+
+	return nil
+}
+
+func (repo *AuthRepository) BeginTx(ctx context.Context) (*gorm.DB, error) {
+	tx := repo.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		repo.log.Error("Failed to begin transaction", "error", tx.Error)
+		return nil, tx.Error
+	}
+	return tx, nil
+}
+
+func (repo *AuthRepository) SoftDeleteUserTx(ctx context.Context, tx *gorm.DB, userID string) error {
+	result := tx.Model(&model.User{}).
+		Where("user_id = ?", userID).
+		Update("is_deleted", true)
+
+	if result.Error != nil {
+		repo.log.Error("Failed to soft delete user", "user_id", userID, "error", result.Error)
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		repo.log.Warn("No user found to soft delete", "user_id", userID)
+	} else {
+		repo.log.Info("User soft deleted successfully", "user_id", userID)
+	}
+
+	return nil
+}
+
+func (repo *AuthRepository) RestoreUserTx(ctx context.Context, tx *gorm.DB, userID string) error {
+	result := tx.Model(&model.User{}).
+		Where("user_id = ?", userID).
+		Update("is_deleted", false)
+
+	if result.Error != nil {
+		repo.log.Error("Failed to restore user", "user_id", userID, "error", result.Error)
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		repo.log.Warn("No user found to restore", "user_id", userID)
+	} else {
+		repo.log.Info("User restored successfully", "user_id", userID)
+	}
 
 	return nil
 }

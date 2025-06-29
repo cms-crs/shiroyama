@@ -4,7 +4,7 @@ postgres:
   name: postgres
   password: password
 grpc:
-  port: 44044
+  port: 44046
   timeout: 10h
 redis:
   port: 44044
@@ -13,3 +13,11 @@ redis:
 jwt:
   accessTTL: 20s
   refreshTTL: 90 # days
+kafka:
+  brokers:
+    - kafka:29092
+  producer:
+    retryMax: 5
+    flushTimeout: 500ms
+    batchSize: 100
+    compression: snappy
