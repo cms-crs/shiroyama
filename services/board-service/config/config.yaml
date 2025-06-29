@@ -20,3 +20,7 @@ kafka:
     flushTimeout: 500ms
     batchSize: 100
     compression: snappy
+clients:
+  userClientAddr: "user-service:44044"
+  teamClientAddr: "team-service:44045"
+  clientTimeout: 30s
