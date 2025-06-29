@@ -6,8 +6,6 @@ services:
     command: [ "./migrate" ]
     env_file:
       - .env.example
-    depends_on:
-      - postgres
     healthcheck:
       test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
       interval: 10s
@@ -15,6 +13,9 @@ services:
       retries: 3
     networks:
       - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
   team-migrate:
     build:
       context: ../services/team-service
@@ -22,8 +23,6 @@ services:
     command: [ "./migrate" ]
     env_file:
       - .env.example
-    depends_on:
-      - postgres
     healthcheck:
       test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
       interval: 10s
@@ -31,6 +30,26 @@ services:
       retries: 3
     networks:
       - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+  board-migrate:
+    build:
+      context: ../services/board-service
+      dockerfile: ../../local-docker/dockerfiles/board.dockerfile
+    command: [ "./migrate" ]
+    env_file:
+      - .env.example
+    healthcheck:
+      test: [ "CMD", "grpc_health_probe", "-addr=localhost:50051" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
 networks:
   backend:
     external: true

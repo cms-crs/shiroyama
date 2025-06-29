@@ -1,17 +1,17 @@
 postgres:
-  host: localhost
+  host: postgres
   user: user
-  name: postgres
+  name: auth
   password: password
 grpc:
   port: 44046
   timeout: 10h
 redis:
-  port: 44044
+  port: 6379
   host: localhost
   ttl: 24h
 jwt:
-  accessTTL: 20s
+  accessTTL: 900s
   refreshTTL: 90 # days
 kafka:
   brokers:

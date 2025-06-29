@@ -1,7 +1,7 @@
 env: "local"
 
 grpc:
-  port: 44044
+  port: 44049
   timeout: 10h
 
 db:

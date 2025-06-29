@@ -7,11 +7,11 @@ grpc:
   port: 44046
   timeout: 10h
 redis:
-  port: 44044
+  port: 6379
   host: localhost
   ttl: 24h
 jwt:
-  accessTTL: 20s
+  accessTTL: 90s
   refreshTTL: 90 # days
 kafka:
   brokers:

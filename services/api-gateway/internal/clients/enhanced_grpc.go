@@ -7,10 +7,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	activityv1 "github.com/cms-crs/protos/gen/go/activity_service"
 	authv1 "github.com/cms-crs/protos/gen/go/auth_service"
 	boardv1 "github.com/cms-crs/protos/gen/go/board_service"
-	commentv1 "github.com/cms-crs/protos/gen/go/comment_service"
 	taskv1 "github.com/cms-crs/protos/gen/go/task_service"
 	teamv1 "github.com/cms-crs/protos/gen/go/team_service"
 	userv1 "github.com/cms-crs/protos/gen/go/user_service"
@@ -19,8 +17,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/resolver"
-	"log"
 	"time"
 )
 
@@ -29,13 +25,12 @@ type EnhancedGRPCClients struct {
 	config      *config.Config
 	logger      logger.Logger
 
-	AuthClient     authv1.AuthServiceClient
-	UserClient     userv1.UserServiceClient
-	TeamClient     teamv1.TeamServiceClient
-	BoardClient    boardv1.BoardServiceClient
-	TaskClient     taskv1.TaskServiceClient
-	CommentClient  commentv1.CommentServiceClient
-	ActivityClient activityv1.ActivityServiceClient
+	AuthClient  authv1.AuthServiceClient
+	UserClient  userv1.UserServiceClient
+	TeamClient  teamv1.TeamServiceClient
+	BoardClient boardv1.BoardServiceClient
+	TaskClient  taskv1.TaskServiceClient
+	//ActivityClient activityv1.ActivityServiceClient
 }
 
 type GRPCConnectionConfig struct {
@@ -49,7 +44,6 @@ type GRPCConnectionConfig struct {
 	TLSSkipVerify    bool
 }
 
-// RetryPolicy настройки retry политики
 type RetryPolicy struct {
 	MaxAttempts       uint
 	InitialBackoff    time.Duration
@@ -65,8 +59,8 @@ func NewEnhancedGRPCClients(cfg *config.Config, log logger.Logger) (*EnhancedGRP
 	}
 
 	connConfig := &GRPCConnectionConfig{
-		MaxRecvMsgSize:   4 * 1024 * 1024, // 4MB
-		MaxSendMsgSize:   4 * 1024 * 1024, // 4MB
+		MaxRecvMsgSize:   4 * 1024 * 1024,
+		MaxSendMsgSize:   4 * 1024 * 1024,
 		ConnectTimeout:   10 * time.Second,
 		KeepAliveTime:    30 * time.Second,
 		KeepAliveTimeout: 5 * time.Second,
@@ -81,13 +75,13 @@ func NewEnhancedGRPCClients(cfg *config.Config, log logger.Logger) (*EnhancedGRP
 	}
 
 	services := map[string]string{
-		"auth":     cfg.Services.AuthService,
-		"user":     cfg.Services.UserService,
-		"team":     cfg.Services.TeamService,
-		"board":    cfg.Services.BoardService,
-		"task":     cfg.Services.TaskService,
-		"comment":  cfg.Services.CommentService,
-		"activity": cfg.Services.ActivityService,
+		"auth":  cfg.Services.AuthService,
+		"user":  cfg.Services.UserService,
+		"team":  cfg.Services.TeamService,
+		"board": cfg.Services.BoardService,
+		"task":  cfg.Services.TaskService,
+		//"comment":  cfg.Services.CommentService,
+		//"activity": cfg.Services.ActivityService,
 	}
 
 	for name, addr := range services {
@@ -105,8 +99,7 @@ func NewEnhancedGRPCClients(cfg *config.Config, log logger.Logger) (*EnhancedGRP
 	clients.TeamClient = teamv1.NewTeamServiceClient(clients.connections["team"])
 	clients.BoardClient = boardv1.NewBoardServiceClient(clients.connections["board"])
 	clients.TaskClient = taskv1.NewTaskServiceClient(clients.connections["task"])
-	clients.CommentClient = commentv1.NewCommentServiceClient(clients.connections["comment"])
-	clients.ActivityClient = activityv1.NewActivityServiceClient(clients.connections["activity"])
+	//clients.ActivityClient = activityv1.NewActivityServiceClient(clients.connections["activity"])
 
 	log.Info("All gRPC clients initialized successfully")
 	return clients, nil
@@ -169,14 +162,12 @@ func (c *EnhancedGRPCClients) unaryClientInterceptor(
 ) error {
 	start := time.Now()
 
-	// Добавляем retry логику
 	err := utils.WithRetry(ctx, func() error {
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}, 3, 100*time.Millisecond)
 
 	duration := time.Since(start)
 
-	// Логирование
 	if err != nil {
 		c.logger.Error("gRPC unary call failed",
 			"method", method,
@@ -193,7 +184,6 @@ func (c *EnhancedGRPCClients) unaryClientInterceptor(
 	return err
 }
 
-// streamClientInterceptor перехватчик для потоковых вызовов
 func (c *EnhancedGRPCClients) streamClientInterceptor(
 	ctx context.Context,
 	desc *grpc.StreamDesc,
@@ -224,42 +214,30 @@ func (c *EnhancedGRPCClients) streamClientInterceptor(
 	return stream, err
 }
 
-// GetAuthClient возвращает клиент аутентификации
 func (c *EnhancedGRPCClients) GetAuthClient() authv1.AuthServiceClient {
 	return c.AuthClient
 }
 
-// GetUserClient возвращает клиент пользователей
 func (c *EnhancedGRPCClients) GetUserClient() userv1.UserServiceClient {
 	return c.UserClient
 }
 
-// GetTeamClient возвращает клиент команд
 func (c *EnhancedGRPCClients) GetTeamClient() teamv1.TeamServiceClient {
 	return c.TeamClient
 }
 
-// GetBoardClient возвращает клиент досок
 func (c *EnhancedGRPCClients) GetBoardClient() boardv1.BoardServiceClient {
 	return c.BoardClient
 }
 
-// GetTaskClient возвращает клиент задач
 func (c *EnhancedGRPCClients) GetTaskClient() taskv1.TaskServiceClient {
 	return c.TaskClient
 }
 
-// GetCommentClient возвращает клиент комментариев
-func (c *EnhancedGRPCClients) GetCommentClient() commentv1.CommentServiceClient {
-	return c.CommentClient
-}
+//func (c *EnhancedGRPCClients) GetActivityClient() activityv1.ActivityServiceClient {
+//	return c.ActivityClient
+//}
 
-// GetActivityClient возвращает клиент активности
-func (c *EnhancedGRPCClients) GetActivityClient() activityv1.ActivityServiceClient {
-	return c.ActivityClient
-}
-
-// HealthCheck проверяет состояние всех gRPC соединений
 func (c *EnhancedGRPCClients) HealthCheck(ctx context.Context) map[string]utils.GRPCHealthStatus {
 	status := make(map[string]utils.GRPCHealthStatus)
 
@@ -276,7 +254,6 @@ func (c *EnhancedGRPCClients) HealthCheck(ctx context.Context) map[string]utils.
 	return status
 }
 
-// Close закрывает все gRPC соединения
 func (c *EnhancedGRPCClients) Close() {
 	for name, conn := range c.connections {
 		if conn != nil {
@@ -289,7 +266,6 @@ func (c *EnhancedGRPCClients) Close() {
 	}
 }
 
-// GetConnectionStats возвращает статистику соединений
 func (c *EnhancedGRPCClients) GetConnectionStats() map[string]interface{} {
 	stats := make(map[string]interface{})
 
@@ -303,7 +279,6 @@ func (c *EnhancedGRPCClients) GetConnectionStats() map[string]interface{} {
 	return stats
 }
 
-// WaitForReady ждет готовности всех соединений
 func (c *EnhancedGRPCClients) WaitForReady(ctx context.Context) error {
 	for name, conn := range c.connections {
 		if !conn.WaitForStateChange(ctx, conn.GetState()) {
@@ -312,21 +287,4 @@ func (c *EnhancedGRPCClients) WaitForReady(ctx context.Context) error {
 		c.logger.Info("Service ready", "service", name)
 	}
 	return nil
-}
-
-// RegisterCustomResolver регистрирует кастомный resolver для service discovery
-func RegisterCustomResolver() {
-	// Пример кастомного resolver для Kubernetes или Consul
-	// Здесь можно добавить интеграцию с вашей системой service discovery
-
-	// Для простоты используем DNS resolver
-	resolver.SetDefaultScheme("dns")
-}
-
-// init инициализирует пакет
-func init() {
-	// Настройка логирования gRPC
-	if log.Default() != nil {
-		// grpclog.SetLoggerV2(grpclog.NewLoggerV2(log.Writer(), log.Writer(), log.Writer()))
-	}
 }
